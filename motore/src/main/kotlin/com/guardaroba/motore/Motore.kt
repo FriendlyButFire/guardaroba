@@ -27,22 +27,22 @@ sealed interface Esito {
     data object Esaurite : Esito
 }
 
-// shortcut: niente Intero, Outfit solo Sopra + Sotto + Scarpe; l'alternativa Intero arriva col ticket 10.
-private val NECESSARIE = listOf(Categoria.SOPRA, Categoria.SOTTO, Categoria.SCARPE)
-
 /**
  * Propone a caso un Outfit valido fatto con i Capi del [guardaroba], escludendo quelli in [giàViste]
  * (insiemi di id dei Capi, vedi [Outfit.idCapi]). [caso] è iniettabile per avere test deterministici.
  */
 fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Long>>, caso: Random = Random.Default): Esito {
     val perCategoria = guardaroba.groupBy { it.categoria }
-    val mancanti = NECESSARIE.filter { it !in perCategoria }
+    fun capi(categoria: Categoria) = perCategoria[categoria].orEmpty()
+    // Sopra e Sotto mancano solo se manca anche l'alternativa, l'Intero.
+    val mancanti = listOf(Categoria.SOPRA, Categoria.SOTTO).filter { it !in perCategoria && Categoria.INTERO !in perCategoria } +
+        listOf(Categoria.SCARPE).filter { it !in perCategoria }
     if (mancanti.isNotEmpty()) return Esito.MancaCategoria(mancanti)
     // shortcut: enumerazione completa delle combinazioni, adeguata fino a qualche centinaio di Capi (spec).
-    val valide = perCategoria.getValue(Categoria.SOPRA).flatMap { sopra ->
-        perCategoria.getValue(Categoria.SOTTO).flatMap { sotto ->
-            perCategoria.getValue(Categoria.SCARPE).map { scarpe -> Outfit(listOf(sopra, sotto, scarpe)) }
-        }
+    val basi = capi(Categoria.SOPRA).flatMap { sopra -> capi(Categoria.SOTTO).map { sotto -> listOf(sopra, sotto) } } +
+        capi(Categoria.INTERO).map { intero -> listOf(intero) }
+    val valide = basi.flatMap { base ->
+        capi(Categoria.SCARPE).map { scarpe -> Outfit(base + scarpe) }
     }.mapNotNull { outfit -> spiegazione(outfit)?.let { Esito.Proposta(outfit, it) } }
     if (valide.isEmpty()) return Esito.NessunAbbinamento
     return valide.filter { it.outfit.idCapi !in giàViste }.randomOrNull(caso) ?: Esito.Esaurite
