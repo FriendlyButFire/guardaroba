@@ -53,6 +53,7 @@ fun GuardarobaApp() {
             when (sezione) {
                 Sezione.GUARDAROBA -> GuardarobaScreen()
                 Sezione.OUTFIT -> OutfitScreen()
+                Sezione.PREFERITI -> PreferitiScreen()
                 // Placeholder per section until its ticket lands.
                 else -> Text(sezione.titolo, style = MaterialTheme.typography.headlineMedium)
             }
