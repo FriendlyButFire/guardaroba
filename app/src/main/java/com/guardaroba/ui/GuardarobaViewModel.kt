@@ -15,8 +15,9 @@ import kotlinx.coroutines.launch
 class GuardarobaViewModel(private val dao: CapoDao) : ViewModel() {
     val capi = dao.tutti().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    fun aggiungi(capo: Capo) {
-        viewModelScope.launch { dao.inserisci(capo) }
+    /** Aggiunge un Capo nuovo o aggiorna quello esistente con lo stesso id. */
+    fun salva(capo: Capo) {
+        viewModelScope.launch { dao.salva(capo) }
     }
 
     companion object {
