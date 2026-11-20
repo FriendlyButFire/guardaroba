@@ -127,7 +127,7 @@ private fun BarraFiltri(filtro: Filtro, onCambia: (Filtro) -> Unit) {
             }
         }
         RigaFiltri {
-            Stagione.entries.forEach {
+            (Stagione.entries - Stagione.TUTTO_L_ANNO).forEach { // "tutto l'anno" entra già in ogni filtro
                 FilterChip(
                     selected = it == filtro.stagione,
                     onClick = { onCambia(filtro.copy(stagione = it.takeIf { it != filtro.stagione })) },
