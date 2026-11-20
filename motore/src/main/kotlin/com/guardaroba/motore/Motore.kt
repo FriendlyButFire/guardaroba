@@ -35,8 +35,9 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
     val perCategoria = guardaroba.groupBy { it.categoria }
     fun capi(categoria: Categoria) = perCategoria[categoria].orEmpty()
     // Sopra e Sotto mancano solo se manca anche l'alternativa, l'Intero.
-    val mancanti = listOf(Categoria.SOPRA, Categoria.SOTTO).filter { it !in perCategoria && Categoria.INTERO !in perCategoria } +
-        listOf(Categoria.SCARPE).filter { it !in perCategoria }
+    val haIntero = Categoria.INTERO in perCategoria
+    val mancanti = listOf(Categoria.SOPRA, Categoria.SOTTO).filterNot { haIntero || it in perCategoria } +
+        listOf(Categoria.SCARPE).filterNot { it in perCategoria }
     if (mancanti.isNotEmpty()) return Esito.MancaCategoria(mancanti)
     // shortcut: enumerazione completa delle combinazioni, adeguata fino a qualche centinaio di Capi (spec).
     val basi = capi(Categoria.SOPRA).flatMap { sopra -> capi(Categoria.SOTTO).map { sotto -> listOf(sopra, sotto) } } +

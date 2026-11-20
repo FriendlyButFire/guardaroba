@@ -240,13 +240,11 @@ class MotoreTest {
 
     @Test
     fun `con un Intero e un Sopra senza Sotto si propone l'Intero`() {
+        val sopra = capo(Categoria.SOPRA, "bianco")
         val intero = capo(Categoria.INTERO, "nero")
         val scarpe = capo(Categoria.SCARPE, "bianco")
 
-        assertEquals(
-            Outfit(listOf(intero, scarpe)),
-            (genera(listOf(capo(Categoria.SOPRA, "bianco"), intero, scarpe)) as Esito.Proposta).outfit,
-        )
+        assertEquals(Outfit(listOf(intero, scarpe)), (genera(listOf(sopra, intero, scarpe)) as Esito.Proposta).outfit)
     }
 
     @Test
