@@ -14,6 +14,7 @@ import com.guardaroba.archivio.GuardarobaDatabase
 import com.guardaroba.archivio.PreferitoDao
 import com.guardaroba.motore.Esito
 import com.guardaroba.motore.Richiesta
+import com.guardaroba.motore.Stagione
 import com.guardaroba.motore.colore
 import com.guardaroba.motore.proponi
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,6 +31,9 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
     var stato by mutableStateOf<StatoOutfit?>(null)
         private set
 
+    /** Il filtro Stagione scelto prima di generare; null = nessun filtro. */
+    var filtroStagione by mutableStateOf<Stagione?>(null)
+
     /** Gli Outfit tra i Preferiti, come insiemi di id dei Capi: segue anche le eliminazioni dalla lista. */
     val salvati = preferiti.tutti()
         .map { lista -> lista.map { p -> p.capi.map { it.id }.toSet() }.toSet() }
@@ -42,7 +46,7 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
     fun genera() {
         viewModelScope.launch {
             val capi = dao.tutti().first()
-            val esito = proponi(capi.map { it.perMotore() }, Richiesta.Genera, giàViste)
+            val esito = proponi(capi.map { it.perMotore() }, Richiesta.Genera(filtroStagione), giàViste)
             if (esito is Esito.Proposta) giàViste += esito.outfit.idCapi
             stato = StatoOutfit(esito, capi.associateBy { it.id })
         }
@@ -71,4 +75,4 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
 }
 
 private fun Capo.perMotore() =
-    CapoMotore(id, categoria, colore(colorePrincipale), motivo, coloreSecondario?.let(::colore))
+    CapoMotore(id, categoria, colore(colorePrincipale), motivo, coloreSecondario?.let(::colore), stagione)

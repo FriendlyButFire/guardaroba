@@ -1,12 +1,15 @@
 package com.guardaroba.ui
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -23,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.guardaroba.motore.Esito
+import com.guardaroba.motore.Stagione
 
 @Composable
 fun OutfitScreen(vm: OutfitViewModel = viewModel(factory = OutfitViewModel.Factory)) {
@@ -57,6 +61,16 @@ fun OutfitScreen(vm: OutfitViewModel = viewModel(factory = OutfitViewModel.Facto
             )
             Esito.NessunAbbinamento -> Messaggio("Nessun abbinamento possibile con i colori dei tuoi Capi.")
             Esito.Esaurite -> Messaggio("Hai visto tutte le Proposte possibili.")
+        }
+        // Nessuna voce scelta = nessun filtro; "tutto l'anno" entra già in ogni filtro. Vale dalla prossima Proposta.
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            (Stagione.entries - Stagione.TUTTO_L_ANNO).forEach {
+                FilterChip(
+                    selected = it == vm.filtroStagione,
+                    onClick = { vm.filtroStagione = it.takeIf { it != vm.filtroStagione } },
+                    label = { Text(it.nome) },
+                )
+            }
         }
         if (stato?.esito == Esito.Esaurite) {
             Button(onClick = vm::ricomincia) { Text("Ricomincia") }
