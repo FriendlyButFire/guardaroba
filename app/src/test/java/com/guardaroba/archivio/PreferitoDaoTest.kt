@@ -55,4 +55,41 @@ class PreferitoDaoTest {
         assertEquals(primo, ripetuto)
         assertEquals(setOf(setOf(a, b, c), setOf(a, b), setOf(a, b, d)), preferiti.map { p -> p.capi.map { it.id }.toSet() }.toSet())
     }
+
+    @Test
+    fun `il nome è opzionale al salvataggio e si può cambiare o togliere`() = runBlocking {
+        val db = GuardarobaDatabase.apri(context)
+        val (a, b, c, d) = db.inserisci(sopra, sotto, scarpe, altreScarpe).map { it.id }
+        val dao = db.preferitoDao()
+
+        val colloquio = dao.salva("neutri", setOf(a, b, d), nome = "  colloquio ")
+        val senzaNome = dao.salva("neutri", setOf(a, b, c), nome = "   ")
+        suspend fun nomi() = dao.tutti().first().associate { it.preferito.id to it.preferito.nome }
+        assertEquals(mapOf(colloquio to "colloquio", senzaNome to null), nomi())
+
+        dao.rinomina(senzaNome, " weekend")
+        dao.rinomina(colloquio, "")
+        assertEquals(mapOf(colloquio to null, senzaNome to "weekend"), nomi())
+        db.close()
+    }
+
+    @Test
+    fun `eliminare un Preferito lascia intatti i suoi Capi e gli altri Preferiti`() = runBlocking {
+        val db = GuardarobaDatabase.apri(context)
+        val capi = db.inserisci(sopra, sotto, scarpe, altreScarpe)
+        val (a, b, c, d) = capi.map { it.id }
+        val dao = db.preferitoDao()
+        val eliminato = dao.salva("neutri", setOf(a, b, c))
+        val resta = dao.salva("neutri", setOf(a, b, d))
+
+        dao.elimina(eliminato)
+        val righeRimaste = dao.conICapi(setOf(a, b, c), 3)
+        val preferiti = dao.tutti().first()
+        val guardaroba = db.capoDao().tutti().first()
+        db.close()
+
+        assertEquals(null, righeRimaste) // la cascata ha tolto le sue righe di preferito_capo
+        assertEquals(listOf(resta), preferiti.map { it.preferito.id })
+        assertEquals(capi.toSet(), guardaroba.toSet())
+    }
 }
