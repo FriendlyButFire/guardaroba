@@ -33,6 +33,7 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
 
     /** Il filtro Stagione scelto prima di generare; null = nessun filtro. */
     var filtroStagione by mutableStateOf<Stagione?>(null)
+        private set
 
     /** Gli Outfit tra i Preferiti, come insiemi di id dei Capi: segue anche le eliminazioni dalla lista. */
     val salvati = preferiti.tutti()
@@ -56,6 +57,12 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
     fun salva(nome: String) {
         val proposta = stato?.esito as? Esito.Proposta ?: return
         viewModelScope.launch { preferiti.salva(proposta.spiegazione, proposta.outfit.idCapi, nome) }
+    }
+
+    /** Cambia il filtro Stagione; le Proposte già viste ripartono da zero (ADR-0006). */
+    fun scegliStagione(stagione: Stagione?) {
+        filtroStagione = stagione
+        giàViste.clear()
     }
 
     /** Azzera le Proposte già viste e ne chiede una nuova. */

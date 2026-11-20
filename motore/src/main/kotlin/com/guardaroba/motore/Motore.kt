@@ -45,7 +45,7 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
     // shortcut: enumerazione completa delle combinazioni, adeguata fino a qualche centinaio di Capi (spec).
     val basi = capi(Categoria.SOPRA).flatMap { sopra -> capi(Categoria.SOTTO).map { sotto -> listOf(sopra, sotto) } } +
         capi(Categoria.INTERO).map { intero -> listOf(intero) }
-    fun proposte(outfit: List<Outfit>) = outfit.mapNotNull { o -> spiegazione(o)?.let { Esito.Proposta(o, it) } }
+    fun proposte(candidati: List<Outfit>) = candidati.mapNotNull { o -> spiegazione(o)?.let { Esito.Proposta(o, it) } }
     // Con invernale o mezza stagione ogni Capospalla compatibile dà una Proposta; senza nessuno, l'Outfit resta senza.
     val capospalla = if (filtro == Stagione.INVERNALE || filtro == Stagione.MEZZA_STAGIONE) capi(Categoria.CAPOSPALLA) else emptyList()
     val valide = basi.flatMap { base ->

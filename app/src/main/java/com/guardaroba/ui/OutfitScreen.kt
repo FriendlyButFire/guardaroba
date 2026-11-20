@@ -62,13 +62,13 @@ fun OutfitScreen(vm: OutfitViewModel = viewModel(factory = OutfitViewModel.Facto
             Esito.NessunAbbinamento -> Messaggio("Nessun abbinamento possibile con i colori dei tuoi Capi.")
             Esito.Esaurite -> Messaggio("Hai visto tutte le Proposte possibili.")
         }
-        // Nessuna voce scelta = nessun filtro; "tutto l'anno" entra già in ogni filtro. Vale dalla prossima Proposta.
+        // "tutto l'anno" entra già in ogni filtro, quindi non è una voce. Vale dalla prossima Proposta.
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            (Stagione.entries - Stagione.TUTTO_L_ANNO).forEach {
+            (listOf(null) + (Stagione.entries - Stagione.TUTTO_L_ANNO)).forEach {
                 FilterChip(
                     selected = it == vm.filtroStagione,
-                    onClick = { vm.filtroStagione = it.takeIf { it != vm.filtroStagione } },
-                    label = { Text(it.nome) },
+                    onClick = { vm.scegliStagione(it) },
+                    label = { Text(it?.nome ?: "nessuno") },
                 )
             }
         }
