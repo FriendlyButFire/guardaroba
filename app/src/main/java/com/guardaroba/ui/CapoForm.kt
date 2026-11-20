@@ -23,6 +23,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,7 +39,9 @@ import androidx.compose.ui.unit.dp
 import com.guardaroba.archivio.Capo
 import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Colore
+import com.guardaroba.motore.Motivo
 import com.guardaroba.motore.PALETTE
+import com.guardaroba.motore.Stagione
 
 /** Form del nuovo Capo: un campo = uno stato + una [Sezione]. */
 @Composable
@@ -46,6 +49,10 @@ fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit) {
     var categoria by rememberSaveable { mutableStateOf<Categoria?>(null) }
     var tipo by rememberSaveable { mutableStateOf<String?>(null) }
     var colorePrincipale by rememberSaveable { mutableStateOf<String?>(null) }
+    var coloreSecondario by rememberSaveable { mutableStateOf<String?>(null) }
+    var motivo by rememberSaveable { mutableStateOf(Motivo.TINTA_UNITA) }
+    var stagione by rememberSaveable { mutableStateOf(Stagione.TUTTO_L_ANNO) }
+    var taglia by rememberSaveable { mutableStateOf("") }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -70,12 +77,30 @@ fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit) {
             }
         }
 
-        Text("Colore principale", style = MaterialTheme.typography.titleMedium)
-        PALETTE.partition { it.neutro }.toList().zip(listOf("Neutri", "Colori")).forEach { (gruppo, titolo) ->
-            Sezione(titolo, MaterialTheme.typography.labelLarge) {
-                gruppo.forEach { CampioneColore(it, it.id == colorePrincipale) { colorePrincipale = it.id } }
+        SceltaColore("Colore principale", colorePrincipale) { colorePrincipale = it }
+        // Toccare di nuovo il Colore secondario scelto lo toglie.
+        SceltaColore("Colore secondario (opzionale)", coloreSecondario) {
+            coloreSecondario = it.takeIf { it != coloreSecondario }
+        }
+
+        Sezione("Motivo") {
+            Motivo.entries.forEach {
+                FilterChip(selected = it == motivo, onClick = { motivo = it }, label = { Text(it.nome) })
             }
         }
+        Sezione("Stagione") {
+            Stagione.entries.forEach {
+                FilterChip(selected = it == stagione, onClick = { stagione = it }, label = { Text(it.nome) })
+            }
+        }
+        OutlinedTextField(
+            value = taglia,
+            onValueChange = { taglia = it },
+            label = { Text("Taglia (opzionale)") },
+            placeholder = { Text("es. M, 42, W32 L34") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
             OutlinedButton(onClick = onAnnulla) { Text("Annulla") }
@@ -84,7 +109,14 @@ fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit) {
             val p = colorePrincipale
             Button(
                 enabled = c != null && t != null && p != null,
-                onClick = { onSalva(Capo(categoria = c!!, tipo = t!!, colorePrincipale = p!!)) },
+                onClick = {
+                    onSalva(
+                        Capo(
+                            categoria = c!!, tipo = t!!, colorePrincipale = p!!, coloreSecondario = coloreSecondario,
+                            motivo = motivo, stagione = stagione, taglia = taglia.trim().ifEmpty { null },
+                        ),
+                    )
+                },
             ) { Text("Salva") }
         }
     }
@@ -102,6 +134,17 @@ private fun Sezione(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) { voci() }
+    }
+}
+
+/** Un Colore dalla Palette, con i Neutri raggruppati a parte. */
+@Composable
+private fun SceltaColore(titolo: String, selezionato: String?, onScelta: (String) -> Unit) {
+    Text(titolo, style = MaterialTheme.typography.titleMedium)
+    PALETTE.partition { it.neutro }.toList().zip(listOf("Neutri", "Colori")).forEach { (gruppo, nomeGruppo) ->
+        Sezione(nomeGruppo, MaterialTheme.typography.labelLarge) {
+            gruppo.forEach { CampioneColore(it, it.id == selezionato) { onScelta(it.id) } }
+        }
     }
 }
 

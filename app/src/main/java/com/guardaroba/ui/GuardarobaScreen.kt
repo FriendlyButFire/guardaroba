@@ -4,10 +4,12 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -28,6 +30,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -102,14 +105,18 @@ private fun GrigliaCapi(capi: List<Capo>, modifier: Modifier = Modifier) {
 private fun RiquadroCapo(capo: Capo) {
     val principale = colore(capo.colorePrincipale)
     val forma = RoundedCornerShape(12.dp)
-    Box(
+    Column(
         Modifier
             .padding(4.dp)
             .aspectRatio(1f)
-            .background(principale.campione(), forma)
+            .clip(forma)
+            .background(principale.campione())
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, forma),
-        contentAlignment = Alignment.Center,
     ) {
-        Text(capo.tipo, color = principale.testoSopra(), style = MaterialTheme.typography.labelLarge)
+        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+            Text(capo.tipo, color = principale.testoSopra(), style = MaterialTheme.typography.labelLarge)
+        }
+        // Il Colore secondario come fascia in basso nel riquadro.
+        capo.coloreSecondario?.let { Box(Modifier.fillMaxWidth().weight(0.3f).background(colore(it).campione())) }
     }
 }
