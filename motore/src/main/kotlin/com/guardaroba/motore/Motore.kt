@@ -2,8 +2,14 @@ package com.guardaroba.motore
 
 import kotlin.random.Random
 
-/** Un Capo come lo vede il Motore: solo ciò che conta per gli abbinamenti. */
-data class Capo(val id: Long, val categoria: Categoria, val colorePrincipale: Colore)
+/** Un Capo come lo vede il Motore: solo ciò che conta per gli abbinamenti. Il [coloreSecondario] non vincola. */
+data class Capo(
+    val id: Long,
+    val categoria: Categoria,
+    val colorePrincipale: Colore,
+    val motivo: Motivo = Motivo.TINTA_UNITA,
+    val coloreSecondario: Colore? = null,
+)
 
 /** Un insieme di Capi indossabili insieme; si identifica con l'insieme degli id dei suoi Capi. */
 data class Outfit(val capi: List<Capo>) {
@@ -21,22 +27,23 @@ sealed interface Esito {
     data object Esaurite : Esito
 }
 
-// shortcut: niente Intero, Outfit solo Sopra + Sotto + Scarpe; l'alternativa Intero arriva col ticket 10.
-private val NECESSARIE = listOf(Categoria.SOPRA, Categoria.SOTTO, Categoria.SCARPE)
-
 /**
  * Propone a caso un Outfit valido fatto con i Capi del [guardaroba], escludendo quelli in [giàViste]
  * (insiemi di id dei Capi, vedi [Outfit.idCapi]). [caso] è iniettabile per avere test deterministici.
  */
 fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Long>>, caso: Random = Random.Default): Esito {
     val perCategoria = guardaroba.groupBy { it.categoria }
-    val mancanti = NECESSARIE.filter { it !in perCategoria }
+    fun capi(categoria: Categoria) = perCategoria[categoria].orEmpty()
+    // Sopra e Sotto mancano solo se manca anche l'alternativa, l'Intero.
+    val haIntero = Categoria.INTERO in perCategoria
+    val mancanti = listOf(Categoria.SOPRA, Categoria.SOTTO).filterNot { haIntero || it in perCategoria } +
+        listOf(Categoria.SCARPE).filterNot { it in perCategoria }
     if (mancanti.isNotEmpty()) return Esito.MancaCategoria(mancanti)
     // shortcut: enumerazione completa delle combinazioni, adeguata fino a qualche centinaio di Capi (spec).
-    val valide = perCategoria.getValue(Categoria.SOPRA).flatMap { sopra ->
-        perCategoria.getValue(Categoria.SOTTO).flatMap { sotto ->
-            perCategoria.getValue(Categoria.SCARPE).map { scarpe -> Outfit(listOf(sopra, sotto, scarpe)) }
-        }
+    val basi = capi(Categoria.SOPRA).flatMap { sopra -> capi(Categoria.SOTTO).map { sotto -> listOf(sopra, sotto) } } +
+        capi(Categoria.INTERO).map { intero -> listOf(intero) }
+    val valide = basi.flatMap { base ->
+        capi(Categoria.SCARPE).map { scarpe -> Outfit(base + scarpe) }
     }.mapNotNull { outfit -> spiegazione(outfit)?.let { Esito.Proposta(outfit, it) } }
     if (valide.isEmpty()) return Esito.NessunAbbinamento
     return valide.filter { it.outfit.idCapi !in giàViste }.randomOrNull(caso) ?: Esito.Esaurite
@@ -44,6 +51,7 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
 
 /** La Spiegazione dell'Outfit, o null se l'Outfit non è valido. */
 private fun spiegazione(outfit: Outfit): String? {
+    if (outfit.capi.count { it.motivo != Motivo.TINTA_UNITA } > 1) return null
     val colori = outfit.capi.map { it.colorePrincipale }.distinct()
     val nonNeutri = colori.filterNot { it.neutro }
     val regola = when (nonNeutri.size) {

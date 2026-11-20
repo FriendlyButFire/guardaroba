@@ -7,8 +7,12 @@ import kotlin.random.Random
 
 class MotoreTest {
     private var prossimoId = 1L
-    private fun capo(categoria: Categoria, colorePrincipale: String) =
-        Capo(prossimoId++, categoria, colore(colorePrincipale))
+    private fun capo(
+        categoria: Categoria,
+        colorePrincipale: String,
+        motivo: Motivo = Motivo.TINTA_UNITA,
+        coloreSecondario: String? = null,
+    ) = Capo(prossimoId++, categoria, colore(colorePrincipale), motivo, coloreSecondario?.let(::colore))
 
     private fun genera(guardaroba: List<Capo>, giàViste: Set<Set<Long>> = emptySet()) =
         proponi(guardaroba, Richiesta.Genera, giàViste, Random(42))
@@ -164,5 +168,98 @@ class MotoreTest {
             assertTrue(giàViste.add(proposta.outfit.idCapi))
         }
         assertEquals(Esito.Esaurite, genera(guardaroba, giàViste))
+    }
+
+    @Test
+    fun `due Capi a righe non compaiono mai nella stessa Proposta`() {
+        val sopraRighe = capo(Categoria.SOPRA, "bianco", Motivo.RIGHE)
+        val sopraTinta = capo(Categoria.SOPRA, "nero")
+        val sottoRighe = capo(Categoria.SOTTO, "blu_navy", Motivo.RIGHE)
+        val sottoTinta = capo(Categoria.SOTTO, "beige")
+        val scarpe = capo(Categoria.SCARPE, "nero")
+        val guardaroba = listOf(sopraRighe, sopraTinta, sottoRighe, sottoTinta, scarpe)
+        val giàViste = mutableSetOf<Set<Long>>()
+
+        repeat(3) {
+            val outfit = (genera(guardaroba, giàViste) as Esito.Proposta).outfit
+            assertTrue(outfit.capi.count { it.motivo != Motivo.TINTA_UNITA } <= 1)
+            giàViste += outfit.idCapi
+        }
+        assertEquals(Esito.Esaurite, genera(guardaroba, giàViste))
+    }
+
+    @Test
+    fun `scarpe a quadri con un Sopra a fantasia non sono valide`() {
+        val guardaroba = listOf(
+            capo(Categoria.SOPRA, "nero", Motivo.FANTASIA),
+            capo(Categoria.SOTTO, "denim"),
+            capo(Categoria.SCARPE, "marrone", Motivo.QUADRI),
+        )
+
+        assertEquals(Esito.NessunAbbinamento, genera(guardaroba))
+    }
+
+    @Test
+    fun `un Colore secondario non neutro non rende invalido un Outfit`() {
+        val guardaroba = listOf(
+            capo(Categoria.SOPRA, "rosso", coloreSecondario = "giallo"),
+            capo(Categoria.SOTTO, "denim", coloreSecondario = "verde_oliva"),
+            capo(Categoria.SCARPE, "bianco"),
+        )
+
+        assertEquals("rosso + denim + bianco: un colore + neutri", (genera(guardaroba) as Esito.Proposta).spiegazione)
+    }
+
+    @Test
+    fun `con solo Interi e Scarpe si propone Intero + Scarpe, senza MancaCategoria per Sopra e Sotto`() {
+        val intero = capo(Categoria.INTERO, "rosso")
+        val scarpe = capo(Categoria.SCARPE, "nero")
+
+        assertEquals(Esito.Proposta(Outfit(listOf(intero, scarpe)), "rosso + nero: un colore + neutri"), genera(listOf(intero, scarpe)))
+    }
+
+    @Test
+    fun `con Sopra, Sotto e Intero si propongono entrambe le composizioni, mai Intero insieme a Sopra o Sotto`() {
+        val sopra = capo(Categoria.SOPRA, "bianco")
+        val sotto = capo(Categoria.SOTTO, "denim")
+        val intero = capo(Categoria.INTERO, "nero")
+        val scarpe = capo(Categoria.SCARPE, "nero")
+        val guardaroba = listOf(sopra, sotto, intero, scarpe)
+        val giàViste = mutableSetOf<Set<Long>>()
+
+        repeat(2) { giàViste += (genera(guardaroba, giàViste) as Esito.Proposta).outfit.idCapi }
+
+        assertEquals(setOf(setOf(sopra.id, sotto.id, scarpe.id), setOf(intero.id, scarpe.id)), giàViste)
+        assertEquals(Esito.Esaurite, genera(guardaroba, giàViste))
+    }
+
+    @Test
+    fun `con un Intero ma senza Scarpe manca solo Scarpe`() {
+        assertEquals(Esito.MancaCategoria(listOf(Categoria.SCARPE)), genera(listOf(capo(Categoria.INTERO, "nero"))))
+    }
+
+    @Test
+    fun `con un Intero e un Sopra senza Sotto si propone l'Intero`() {
+        val sopra = capo(Categoria.SOPRA, "bianco")
+        val intero = capo(Categoria.INTERO, "nero")
+        val scarpe = capo(Categoria.SCARPE, "bianco")
+
+        assertEquals(Outfit(listOf(intero, scarpe)), (genera(listOf(sopra, intero, scarpe)) as Esito.Proposta).outfit)
+    }
+
+    @Test
+    fun `il colore dell'Intero conta per l'Armonia`() {
+        val intero = capo(Categoria.INTERO, "blu_royal")
+        val scarpe = capo(Categoria.SCARPE, "arancione")
+
+        assertEquals("blu royal + arancione: complementari", (genera(listOf(intero, scarpe)) as Esito.Proposta).spiegazione)
+        assertEquals(Esito.NessunAbbinamento, genera(listOf(capo(Categoria.INTERO, "rosso"), capo(Categoria.SCARPE, "giallo"))))
+    }
+
+    @Test
+    fun `un Intero a fantasia conta nel limite di un Capo a fantasia`() {
+        val guardaroba = listOf(capo(Categoria.INTERO, "nero", Motivo.FANTASIA), capo(Categoria.SCARPE, "bianco", Motivo.RIGHE))
+
+        assertEquals(Esito.NessunAbbinamento, genera(guardaroba))
     }
 }

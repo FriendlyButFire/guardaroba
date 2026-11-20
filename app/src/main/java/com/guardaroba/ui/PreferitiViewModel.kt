@@ -9,9 +9,18 @@ import com.guardaroba.archivio.GuardarobaDatabase
 import com.guardaroba.archivio.PreferitoDao
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-class PreferitiViewModel(dao: PreferitoDao) : ViewModel() {
+class PreferitiViewModel(private val dao: PreferitoDao) : ViewModel() {
     val preferiti = dao.tutti().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun rinomina(id: Long, nome: String) {
+        viewModelScope.launch { dao.rinomina(id, nome) }
+    }
+
+    fun elimina(id: Long) {
+        viewModelScope.launch { dao.elimina(id) }
+    }
 
     companion object {
         val Factory = viewModelFactory {
