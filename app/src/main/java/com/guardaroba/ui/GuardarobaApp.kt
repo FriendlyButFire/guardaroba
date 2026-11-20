@@ -52,6 +52,7 @@ fun GuardarobaApp() {
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
             when (sezione) {
                 Sezione.GUARDAROBA -> GuardarobaScreen()
+                Sezione.OUTFIT -> OutfitScreen()
                 // Placeholder per section until its ticket lands.
                 else -> Text(sezione.titolo, style = MaterialTheme.typography.headlineMedium)
             }

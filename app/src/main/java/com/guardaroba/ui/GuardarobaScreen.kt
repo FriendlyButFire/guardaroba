@@ -102,11 +102,11 @@ private fun GrigliaCapi(capi: List<Capo>, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun RiquadroCapo(capo: Capo) {
+fun RiquadroCapo(capo: Capo, modifier: Modifier = Modifier) {
     val principale = colore(capo.colorePrincipale)
     val forma = RoundedCornerShape(12.dp)
     Column(
-        Modifier
+        modifier
             .padding(4.dp)
             .aspectRatio(1f)
             .clip(forma)
