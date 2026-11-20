@@ -44,6 +44,9 @@ _Avoid_: Pattern, stampa
 **Stagione**:
 Il periodo in cui si indossa un Capo: estivo, invernale, mezza stagione o tutto l'anno.
 
+**Taglia**:
+La misura del Capo, testo libero opzionale (es. "M", "42", "W32 L34"); solo informativa.
+
 ## Abbinamenti
 
 **Outfit**:

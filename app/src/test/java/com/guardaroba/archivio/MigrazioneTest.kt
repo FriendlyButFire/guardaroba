@@ -19,6 +19,8 @@ class MigrazioneTest {
     fun `un Capo della versione 1 diventa tinta unita, tutto l'anno, senza Colore secondario né Taglia`() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         // Il database v1 come lo lasciava il ticket 02 (createSql e identityHash da app/schemas/.../1.json).
+        // shortcut: copiato a mano perché MigrationTestHelper legge gli schemi solo dagli assets, che Robolectric
+        // non vede nei test; passare a MigrationTestHelper se si aggiungono test strumentati.
         SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(GuardarobaDatabase.NOME).apply { parentFile!!.mkdirs() }, null).run {
             execSQL("CREATE TABLE capo (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `categoria` TEXT NOT NULL, `tipo` TEXT NOT NULL, `colorePrincipale` TEXT NOT NULL, `creatoIl` INTEGER NOT NULL)")
             execSQL("CREATE TABLE room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
