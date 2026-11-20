@@ -49,9 +49,12 @@ fun GuardarobaApp() {
             }
         },
     ) { padding ->
-        // Placeholder per section until its ticket lands.
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-            Text(sezione.titolo, style = MaterialTheme.typography.headlineMedium)
+            when (sezione) {
+                Sezione.GUARDAROBA -> GuardarobaScreen()
+                // Placeholder per section until its ticket lands.
+                else -> Text(sezione.titolo, style = MaterialTheme.typography.headlineMedium)
+            }
         }
     }
 }
