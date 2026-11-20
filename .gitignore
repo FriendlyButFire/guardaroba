@@ -3,3 +3,9 @@ build/
 node_modules/
 .claude/settings.local.json
 plans/
+build-notes/
+.claude/worktrees/
+*.iml
+.idea/
+local.properties
+.kotlin/
