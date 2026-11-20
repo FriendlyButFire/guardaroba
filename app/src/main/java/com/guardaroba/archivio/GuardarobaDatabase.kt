@@ -8,12 +8,16 @@ import androidx.room.RoomDatabase
 
 // Schema esportato in app/schemas: un nuovo campo si aggiunge con version+1 e una AutoMigration (o Migration).
 @Database(
-    entities = [Capo::class],
-    version = 2,
-    autoMigrations = [AutoMigration(from = 1, to = 2)], // v2: coloreSecondario, motivo, stagione, taglia
+    entities = [Capo::class, Preferito::class, PreferitoCapo::class],
+    version = 3,
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2), // v2: coloreSecondario, motivo, stagione, taglia
+        AutoMigration(from = 2, to = 3), // v3: Preferito e PreferitoCapo
+    ],
 )
 abstract class GuardarobaDatabase : RoomDatabase() {
     abstract fun capoDao(): CapoDao
+    abstract fun preferitoDao(): PreferitoDao
 
     companion object {
         const val NOME = "guardaroba.db"
