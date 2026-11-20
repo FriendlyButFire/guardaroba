@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Backup automatico fino ad Android 11 (ADR-0003). Con degli include si salva solo ciò che è incluso:
+     la cache (gli scatti grezzi) resta fuori. Backup.kt somma questi stessi file. -->
+<full-backup-content>
+    <!-- Tutta la cartella: guardaroba.db più i suoi -wal/-shm, che possono contenere dati non ancora scritti nel .db. -->
+    <include domain="database" path="." />
+    <include domain="file" path="foto/" />
+</full-backup-content>

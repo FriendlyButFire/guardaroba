@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -28,5 +29,11 @@ class ManifestTest {
             android.Manifest.permission.CAMERA,
         )
         assertEquals(emptyList<String>(), permessi.filter { it in vietati })
+    }
+
+    @Test
+    fun `il backup automatico di Android è attivo`() {
+        val info = ApplicationProvider.getApplicationContext<android.content.Context>().applicationInfo
+        assertTrue(info.flags and android.content.pm.ApplicationInfo.FLAG_ALLOW_BACKUP != 0)
     }
 }
