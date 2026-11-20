@@ -62,6 +62,7 @@ interface PreferitoDao {
     /** Cambia il nome del Preferito; un nome vuoto lo toglie. */
     suspend fun rinomina(id: Long, nome: String) = aggiornaNome(id, nome.pulito())
 
+    /** Scrive il nome così com'è: passa da [rinomina], che lo pulisce. */
     @Query("UPDATE preferito SET nome = :nome WHERE id = :id")
     suspend fun aggiornaNome(id: Long, nome: String?)
 

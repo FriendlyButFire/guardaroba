@@ -64,7 +64,7 @@ class PreferitoDaoTest {
 
         val colloquio = dao.salva("neutri", setOf(a, b, d), nome = "  colloquio ")
         val senzaNome = dao.salva("neutri", setOf(a, b, c), nome = "   ")
-        val nomi = { runBlocking { dao.tutti().first().associate { it.preferito.id to it.preferito.nome } } }
+        suspend fun nomi() = dao.tutti().first().associate { it.preferito.id to it.preferito.nome }
         assertEquals(mapOf(colloquio to "colloquio", senzaNome to null), nomi())
 
         dao.rinomina(senzaNome, " weekend")
@@ -83,10 +83,12 @@ class PreferitoDaoTest {
         val resta = dao.salva("neutri", setOf(a, b, d))
 
         dao.elimina(eliminato)
+        val righeRimaste = dao.conICapi(setOf(a, b, c), 3)
         val preferiti = dao.tutti().first()
         val guardaroba = db.capoDao().tutti().first()
         db.close()
 
+        assertEquals(null, righeRimaste) // la cascata ha tolto le sue righe di preferito_capo
         assertEquals(listOf(resta), preferiti.map { it.preferito.id })
         assertEquals(capi.toSet(), guardaroba.toSet())
     }

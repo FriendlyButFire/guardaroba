@@ -16,16 +16,24 @@ import com.guardaroba.motore.Esito
 import com.guardaroba.motore.Richiesta
 import com.guardaroba.motore.colore
 import com.guardaroba.motore.proponi
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.guardaroba.motore.Capo as CapoMotore
 
-/** L'ultimo Esito del Motore, con i Capi dell'Archivio per mostrarne le miniature; [salvata] se la Proposta è tra i Preferiti. */
-data class StatoOutfit(val esito: Esito, val capi: Map<Long, Capo>, val salvata: Boolean = false)
+/** L'ultimo Esito del Motore, con i Capi dell'Archivio per mostrarne le miniature. */
+data class StatoOutfit(val esito: Esito, val capi: Map<Long, Capo>)
 
 class OutfitViewModel(private val dao: CapoDao, private val preferiti: PreferitoDao) : ViewModel() {
     var stato by mutableStateOf<StatoOutfit?>(null)
         private set
+
+    /** Gli Outfit tra i Preferiti, come insiemi di id dei Capi: segue anche le eliminazioni dalla lista. */
+    val salvati = preferiti.tutti()
+        .map { lista -> lista.map { p -> p.capi.map { it.id }.toSet() }.toSet() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     /** Gli Outfit già proposti in questa sessione, come insiemi di id dei Capi. */
     private val giàViste = mutableSetOf<Set<Long>>()
@@ -35,22 +43,15 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         viewModelScope.launch {
             val capi = dao.tutti().first()
             val esito = proponi(capi.map { it.perMotore() }, Richiesta.Genera, giàViste)
-            val salvata = esito is Esito.Proposta &&
-                esito.outfit.idCapi.let { preferiti.conICapi(it, it.size) != null }
             if (esito is Esito.Proposta) giàViste += esito.outfit.idCapi
-            stato = StatoOutfit(esito, capi.associateBy { it.id }, salvata)
+            stato = StatoOutfit(esito, capi.associateBy { it.id })
         }
     }
 
     /** Salva la Proposta mostrata tra i Preferiti ("Salva"), col [nome] opzionale; vale per qualsiasi Richiesta. */
     fun salva(nome: String) {
-        val attuale = stato ?: return
-        val proposta = attuale.esito as? Esito.Proposta ?: return
-        viewModelScope.launch {
-            preferiti.salva(proposta.spiegazione, proposta.outfit.idCapi, nome)
-            // Solo se nel frattempo non è arrivata un'altra Proposta.
-            if (stato === attuale) stato = attuale.copy(salvata = true)
-        }
+        val proposta = stato?.esito as? Esito.Proposta ?: return
+        viewModelScope.launch { preferiti.salva(proposta.spiegazione, proposta.outfit.idCapi, nome) }
     }
 
     /** Azzera le Proposte già viste e ne chiede una nuova. */

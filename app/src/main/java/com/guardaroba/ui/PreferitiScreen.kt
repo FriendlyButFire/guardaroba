@@ -51,8 +51,8 @@ fun PreferitiScreen(vm: PreferitiViewModel = viewModel(factory = PreferitiViewMo
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(lista, key = { it.preferito.id }) {
-                SchedaPreferito(it, onRinomina = { daRinominare = it.preferito.id }, onElimina = { daEliminare = it.preferito.id })
+            items(lista, key = { it.preferito.id }) { p ->
+                SchedaPreferito(p, onRinomina = { daRinominare = p.preferito.id }, onElimina = { daEliminare = p.preferito.id })
             }
         }
     }
