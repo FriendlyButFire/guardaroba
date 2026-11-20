@@ -19,7 +19,7 @@ class PreferitoDaoTest {
     private val altreScarpe = Capo(categoria = Categoria.SCARPE, tipo = "eleganti", colorePrincipale = "nero", creatoIl = 4)
 
     private fun GuardarobaDatabase.inserisci(vararg capi: Capo) = runBlocking {
-        capi.map { it.copy(id = capoDao().inserisci(it)) }
+        capi.map { it.copy(id = capoDao().salva(it)) }
     }
 
     @Test
