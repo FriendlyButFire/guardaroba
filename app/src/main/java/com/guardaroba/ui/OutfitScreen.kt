@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,6 +34,9 @@ fun OutfitScreen(vm: OutfitViewModel = viewModel(factory = OutfitViewModel.Facto
                     esito.outfit.capi.mapNotNull { stato.capi[it.id] }.forEach { RiquadroCapo(it, Modifier.weight(1f)) }
                 }
                 Text(esito.spiegazione, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+                OutlinedButton(onClick = vm::salva, enabled = !stato.salvata) {
+                    Text(if (stato.salvata) "Tra i Preferiti" else "Salva")
+                }
             }
             is Esito.MancaCategoria -> Messaggio(
                 (if (esito.categorie.size == 1) "Ti manca: " else "Ti mancano: ") +

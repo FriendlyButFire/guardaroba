@@ -11,6 +11,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.guardaroba.archivio.Capo
 import com.guardaroba.archivio.CapoDao
 import com.guardaroba.archivio.GuardarobaDatabase
+import com.guardaroba.archivio.PreferitoDao
 import com.guardaroba.motore.Esito
 import com.guardaroba.motore.Richiesta
 import com.guardaroba.motore.colore
@@ -19,10 +20,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import com.guardaroba.motore.Capo as CapoMotore
 
-/** L'ultimo Esito del Motore, con i Capi dell'Archivio per mostrarne le miniature. */
-data class StatoOutfit(val esito: Esito, val capi: Map<Long, Capo>)
+/** L'ultimo Esito del Motore, con i Capi dell'Archivio per mostrarne le miniature; [salvata] se la Proposta è tra i Preferiti. */
+data class StatoOutfit(val esito: Esito, val capi: Map<Long, Capo>, val salvata: Boolean = false)
 
-class OutfitViewModel(private val dao: CapoDao) : ViewModel() {
+class OutfitViewModel(private val dao: CapoDao, private val preferiti: PreferitoDao) : ViewModel() {
     var stato by mutableStateOf<StatoOutfit?>(null)
         private set
 
@@ -39,6 +40,17 @@ class OutfitViewModel(private val dao: CapoDao) : ViewModel() {
         }
     }
 
+    /** Salva la Proposta mostrata tra i Preferiti ("Salva"); vale per qualsiasi Richiesta. */
+    fun salva() {
+        val attuale = stato ?: return
+        val proposta = attuale.esito as? Esito.Proposta ?: return
+        viewModelScope.launch {
+            preferiti.salva(proposta.spiegazione, proposta.outfit.idCapi)
+            // Solo se nel frattempo non è arrivata un'altra Proposta.
+            if (stato === attuale) stato = attuale.copy(salvata = true)
+        }
+    }
+
     /** Azzera le Proposte già viste e ne chiede una nuova. */
     fun ricomincia() {
         giàViste.clear()
@@ -47,7 +59,10 @@ class OutfitViewModel(private val dao: CapoDao) : ViewModel() {
 
     companion object {
         val Factory = viewModelFactory {
-            initializer { OutfitViewModel(GuardarobaDatabase.get(this[APPLICATION_KEY]!!).capoDao()) }
+            initializer {
+                val db = GuardarobaDatabase.get(this[APPLICATION_KEY]!!)
+                OutfitViewModel(db.capoDao(), db.preferitoDao())
+            }
         }
     }
 }
