@@ -3,6 +3,7 @@ package com.guardaroba.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -47,23 +48,31 @@ fun Colore.campione(): Color = Color.hsl(h.toFloat(), s / 100f, l / 100f)
 /** Testo leggibile sopra il campione. */
 fun Colore.testoSopra(): Color = if (l > 55) Color.Black else Color.White
 
+private const val NUOVO = 0L // l'id di un Capo non ancora salvato
+
 @Composable
 fun GuardarobaScreen(vm: GuardarobaViewModel = viewModel(factory = GuardarobaViewModel.Factory)) {
     val capi by vm.capi.collectAsStateWithLifecycle()
-    var formAperto by rememberSaveable { mutableStateOf(false) }
+    // Id del Capo aperto nella scheda: null = chiusa, NUOVO = Capo nuovo.
+    var aperto by rememberSaveable { mutableStateOf<Long?>(null) }
 
-    if (formAperto) {
-        BackHandler { formAperto = false }
-        CapoForm(
-            onSalva = { vm.aggiungi(it); formAperto = false },
-            onAnnulla = { formAperto = false },
-        )
-        return
+    aperto?.let { id ->
+        val iniziale = capi?.find { it.id == id }
+        // Un Capo esistente si apre solo quando la lista è caricata (es. dopo che il processo è stato ricreato).
+        if (id == NUOVO || iniziale != null) {
+            BackHandler { aperto = null }
+            CapoForm(
+                onSalva = { vm.salva(it); aperto = null },
+                onAnnulla = { aperto = null },
+                iniziale = iniziale,
+            )
+            return
+        }
     }
     Scaffold(
         contentWindowInsets = WindowInsets(0), // insets already applied by the outer Scaffold
         floatingActionButton = {
-            FloatingActionButton(onClick = { formAperto = true }) {
+            FloatingActionButton(onClick = { aperto = NUOVO }) {
                 Icon(Icons.Filled.Add, contentDescription = "Aggiungi capo")
             }
         },
@@ -74,13 +83,13 @@ fun GuardarobaScreen(vm: GuardarobaViewModel = viewModel(factory = GuardarobaVie
                 Text("Il Guardaroba è vuoto.\nPremi + per aggiungere un capo.", textAlign = TextAlign.Center)
             }
         } else {
-            GrigliaCapi(lista, Modifier.padding(padding))
+            GrigliaCapi(lista, onApri = { aperto = it.id }, Modifier.padding(padding))
         }
     }
 }
 
 @Composable
-private fun GrigliaCapi(capi: List<Capo>, modifier: Modifier = Modifier) {
+private fun GrigliaCapi(capi: List<Capo>, onApri: (Capo) -> Unit, modifier: Modifier = Modifier) {
     val perCategoria = capi.groupBy { it.categoria }
     LazyVerticalGrid(
         columns = GridCells.Adaptive(96.dp),
@@ -96,7 +105,7 @@ private fun GrigliaCapi(capi: List<Capo>, modifier: Modifier = Modifier) {
                     modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 4.dp),
                 )
             }
-            items(gruppo, key = { it.id }) { RiquadroCapo(it) }
+            items(gruppo, key = { it.id }) { RiquadroCapo(it, Modifier.clickable { onApri(it) }) }
         }
     }
 }
