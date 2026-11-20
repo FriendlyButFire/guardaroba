@@ -9,8 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -34,7 +39,12 @@ fun OutfitScreen(vm: OutfitViewModel = viewModel(factory = OutfitViewModel.Facto
                     esito.outfit.capi.mapNotNull { stato.capi[it.id] }.forEach { RiquadroCapo(it, Modifier.weight(1f)) }
                 }
                 Text(esito.spiegazione, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-                OutlinedButton(onClick = vm::salva, enabled = !stato.salvata) {
+                // Una Proposta nuova riparte con il nome vuoto.
+                var nome by rememberSaveable(esito.outfit.idCapi) { mutableStateOf("") }
+                if (!stato.salvata) {
+                    OutlinedTextField(nome, { nome = it }, label = { Text("Nome (opzionale)") }, singleLine = true)
+                }
+                OutlinedButton(onClick = { vm.salva(nome) }, enabled = !stato.salvata) {
                     Text(if (stato.salvata) "Tra i Preferiti" else "Salva")
                 }
             }

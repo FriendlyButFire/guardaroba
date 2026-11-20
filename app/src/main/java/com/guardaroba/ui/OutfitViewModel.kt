@@ -42,12 +42,12 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         }
     }
 
-    /** Salva la Proposta mostrata tra i Preferiti ("Salva"); vale per qualsiasi Richiesta. */
-    fun salva() {
+    /** Salva la Proposta mostrata tra i Preferiti ("Salva"), col [nome] opzionale; vale per qualsiasi Richiesta. */
+    fun salva(nome: String) {
         val attuale = stato ?: return
         val proposta = attuale.esito as? Esito.Proposta ?: return
         viewModelScope.launch {
-            preferiti.salva(proposta.spiegazione, proposta.outfit.idCapi)
+            preferiti.salva(proposta.spiegazione, proposta.outfit.idCapi, nome)
             // Solo se nel frattempo non è arrivata un'altra Proposta.
             if (stato === attuale) stato = attuale.copy(salvata = true)
         }
