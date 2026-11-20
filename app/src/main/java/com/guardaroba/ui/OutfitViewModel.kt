@@ -52,4 +52,5 @@ class OutfitViewModel(private val dao: CapoDao) : ViewModel() {
     }
 }
 
-private fun Capo.perMotore() = CapoMotore(id, categoria, colore(colorePrincipale))
+private fun Capo.perMotore() =
+    CapoMotore(id, categoria, colore(colorePrincipale), motivo, coloreSecondario?.let(::colore))

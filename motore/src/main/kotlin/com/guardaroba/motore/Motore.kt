@@ -2,8 +2,14 @@ package com.guardaroba.motore
 
 import kotlin.random.Random
 
-/** Un Capo come lo vede il Motore: solo ciò che conta per gli abbinamenti. */
-data class Capo(val id: Long, val categoria: Categoria, val colorePrincipale: Colore)
+/** Un Capo come lo vede il Motore: solo ciò che conta per gli abbinamenti. Il [coloreSecondario] non vincola. */
+data class Capo(
+    val id: Long,
+    val categoria: Categoria,
+    val colorePrincipale: Colore,
+    val motivo: Motivo = Motivo.TINTA_UNITA,
+    val coloreSecondario: Colore? = null,
+)
 
 /** Un insieme di Capi indossabili insieme; si identifica con l'insieme degli id dei suoi Capi. */
 data class Outfit(val capi: List<Capo>) {
@@ -44,6 +50,7 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
 
 /** La Spiegazione dell'Outfit, o null se l'Outfit non è valido. */
 private fun spiegazione(outfit: Outfit): String? {
+    if (outfit.capi.count { it.motivo != Motivo.TINTA_UNITA } > 1) return null
     val colori = outfit.capi.map { it.colorePrincipale }.distinct()
     val nonNeutri = colori.filterNot { it.neutro }
     val regola = when (nonNeutri.size) {
