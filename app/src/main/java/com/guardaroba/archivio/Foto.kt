@@ -59,11 +59,10 @@ class Foto(context: Context) {
 
     // shortcut: solo le rotazioni; le orientazioni specchiate (rare, fotocamere frontali) restano specchiate.
     private fun gradiExif(apri: () -> InputStream): Float {
-        val orientamento = try {
+        // Un EXIF assente o rovinato non deve far perdere la foto: la si tiene com'è.
+        val orientamento = runCatching {
             apri().use { ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) }
-        } catch (_: IOException) {
-            ExifInterface.ORIENTATION_NORMAL // formato senza EXIF leggibile
-        }
+        }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
         return when (orientamento) {
             ExifInterface.ORIENTATION_ROTATE_90 -> 90f
             ExifInterface.ORIENTATION_ROTATE_180 -> 180f

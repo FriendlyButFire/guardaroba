@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
@@ -37,6 +38,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,7 +69,7 @@ import java.io.IOException
 /**
  * Scheda di un Capo: nuovo se [iniziale] è null, altrimenti la modifica di [iniziale] (stesso id).
  * Un campo = uno stato + una [Sezione]; nulla si salva finché non si preme Salva.
- * Una foto scelta qui è già compressa in [Foto]; se non arriva al salvataggio (sostituita o annullata) il form la cancella,
+ * Una foto scelta qui è già compressa in [Foto]; se non arriva al salvataggio (sostituita, o form chiuso senza Salva) il form la cancella,
  * mentre quella di [iniziale] la cancella [com.guardaroba.archivio.CapoDao.salva] solo a Salva.
  */
 @Composable
@@ -86,9 +88,15 @@ fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = n
     val foto = remember { Foto(context) }
     val scope = rememberCoroutineScope()
     fun scarta(nome: String?) { if (nome != iniziale?.percorsoFoto) foto.elimina(nome) }
-    fun annulla() { scarta(percorsoFoto); onAnnulla() }
-    // shortcut: se il form si chiude a metà compressione (es. rotazione dello schermo) il file appena scritto resta orfano;
-    // spostare la compressione nel ViewModel se capita davvero.
+    // Il form si chiude con Annulla, Indietro, cambio di sezione o chiusura dell'app: la foto non salvata va via in ogni caso.
+    // Non a una rotazione, dove rememberSaveable la ripresenta.
+    // shortcut: se Android uccide il processo e l'utente non torna al form, o se il form si chiude a metà compressione,
+    // il file resta orfano in foto/; aggiungere una pulizia dei file non usati da nessun Capo se capita davvero.
+    val activity = LocalActivity.current
+    var salvato by remember { mutableStateOf(false) }
+    DisposableEffect(Unit) {
+        onDispose { if (!salvato && activity?.isChangingConfigurations != true) scarta(percorsoFoto) }
+    }
     fun usa(uri: Uri, poi: () -> Unit = {}) {
         inCompressione = true
         scope.launch {
@@ -110,7 +118,7 @@ fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = n
     }
     val galleria = rememberLauncherForActivityResult(PickVisualMedia()) { uri -> uri?.let { usa(it) } }
 
-    BackHandler(onBack = ::annulla)
+    BackHandler(onBack = onAnnulla)
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -179,7 +187,7 @@ fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = n
         )
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-            OutlinedButton(onClick = ::annulla) { Text("Annulla") }
+            OutlinedButton(onClick = onAnnulla) { Text("Annulla") }
             val c = categoria
             val t = tipo
             val p = colorePrincipale
@@ -187,6 +195,7 @@ fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = n
                 enabled = c != null && t != null && p != null && !inCompressione,
                 onClick = {
                     // copy() del Capo modificato tiene id, creatoIl e ogni campo che il form non mostra.
+                    salvato = true
                     onSalva(
                         (iniziale ?: Capo(categoria = c!!, tipo = t!!, colorePrincipale = p!!)).copy(
                             categoria = c!!, tipo = t!!, colorePrincipale = p!!, coloreSecondario = coloreSecondario,
