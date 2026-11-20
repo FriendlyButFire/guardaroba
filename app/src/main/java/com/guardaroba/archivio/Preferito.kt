@@ -22,9 +22,10 @@ data class Preferito(
     val creatoIl: Long = System.currentTimeMillis(),
 )
 
-/** Un Capo di un Preferito. Le foreign key in cascata tolgono la riga quando sparisce il Preferito o il Capo. */
-// shortcut: la cascata su capoId toglie solo questa riga, il Preferito resta con un Capo in meno;
-// il ticket 17 deve eliminare nella stessa transazione i Preferiti che contengono il Capo.
+/**
+ * Un Capo di un Preferito. Le foreign key in cascata tolgono la riga quando sparisce il Preferito o il Capo;
+ * il Preferito stesso lo elimina [CapoDao.elimina], che passa sempre prima di cancellare un Capo.
+ */
 @Entity(
     tableName = "preferito_capo",
     primaryKeys = ["preferitoId", "capoId"],

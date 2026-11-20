@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,6 +31,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -71,9 +73,10 @@ import java.io.IOException
  * Un campo = uno stato + una [Sezione]; nulla si salva finché non si preme Salva.
  * Una foto scelta qui è già compressa in [Foto]; se non arriva al salvataggio (sostituita, o form chiuso senza Salva) il form la cancella,
  * mentre quella di [iniziale] la cancella [com.guardaroba.archivio.CapoDao.salva] solo a Salva.
+ * [onElimina] chiede di eliminare [iniziale]: la conferma la chiede chi chiama.
  */
 @Composable
-fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = null) {
+fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = null, onElimina: () -> Unit = {}) {
     var categoria by rememberSaveable { mutableStateOf(iniziale?.categoria) }
     var tipo by rememberSaveable { mutableStateOf(iniziale?.tipo) }
     var colorePrincipale by rememberSaveable { mutableStateOf(iniziale?.colorePrincipale) }
@@ -187,6 +190,14 @@ fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = n
         )
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+            if (iniziale != null) {
+                TextButton(
+                    onClick = onElimina,
+                    enabled = !inCompressione,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text("Elimina") }
+                Spacer(Modifier.weight(1f))
+            }
             OutlinedButton(onClick = onAnnulla) { Text("Annulla") }
             val c = categoria
             val t = tipo

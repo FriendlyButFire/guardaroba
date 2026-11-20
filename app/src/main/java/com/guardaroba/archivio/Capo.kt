@@ -5,6 +5,7 @@ import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Motivo
@@ -44,4 +45,27 @@ interface CapoDao {
 
     @Query("SELECT percorsoFoto FROM capo WHERE id = :id")
     suspend fun percorsoFoto(id: Long): String?
+
+    /** Quanti Preferiti contengono il Capo: tanti ne sparirebbero eliminandolo. */
+    @Query("SELECT COUNT(*) FROM preferito_capo WHERE capoId = :id")
+    suspend fun quantiPreferiti(id: Long): Int
+
+    /** Elimina il Capo, i Preferiti che lo contengono e poi, a eliminazione riuscita, il file della sua foto. */
+    suspend fun elimina(id: Long, foto: Foto) {
+        foto.elimina(eliminaConPreferiti(id))
+    }
+
+    /** Elimina il Capo e i Preferiti che lo contengono; ritorna la foto che il Capo usava. */
+    @Transaction
+    suspend fun eliminaConPreferiti(id: Long): String? = percorsoFoto(id).also {
+        eliminaPreferitiCon(id)
+        eliminaCapo(id)
+    }
+
+    // La cascata su preferito_capo.capoId toglierebbe solo la riga: il Preferito va eliminato qui, prima del Capo.
+    @Query("DELETE FROM preferito WHERE id IN (SELECT preferitoId FROM preferito_capo WHERE capoId = :id)")
+    suspend fun eliminaPreferitiCon(id: Long)
+
+    @Query("DELETE FROM capo WHERE id = :id")
+    suspend fun eliminaCapo(id: Long)
 }
