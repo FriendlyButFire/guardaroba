@@ -4,7 +4,7 @@ Un Outfit è valido se i Colori principali non neutri (al massimo 2) formano una
 
 ## Soglie (ticket 08)
 
-Ricerca completa, con fonti e tabella della Palette: `build-notes/color-harmony.md`.
+Le soglie e le loro ragioni sono tutte qui sotto. La ricerca con le fonti è in `build-notes/color-harmony.md`, una nota di lavoro locale che non sta nel repo.
 
 - **Tinta RYB, non HSL.** I Colori si salvano in HSL (servono per i campioni), ma l'armonia si calcola sulla tinta della ruota del pittore (rosso, giallo, blu), quella usata nella moda: le coppie complementari sono rosso-verde, blu-arancione, giallo-viola. Con l'HSL diretto rosso + verde bosco e giallo + viola verrebbero rifiutati e rosso + turchese passerebbe per complementare. La tinta RYB si ottiene dalla tinta HSL con una mappatura lineare a tratti: HSL 0, 30, 60, 120, 240, 300, 360 → RYB 0, 60, 120, 180, 240, 300, 360.
 - **Distanza** tra due Colori non neutri distinti: $d = \min(|a-b| \bmod 360,\ 360 - |a-b| \bmod 360)$ sulla tinta RYB.

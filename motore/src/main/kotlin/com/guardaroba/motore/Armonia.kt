@@ -10,11 +10,11 @@ private fun tintaRyb(h: Int): Double {
     return a.second + (h - a.first) * (b.second - a.second).toDouble() / (b.first - a.first)
 }
 
+// shortcut: soglie tarate sulla Palette fissa; con colori personalizzati servono anche ΔL e S (ADR-0004).
 /**
  * L'Armonia tra due Colori non neutri distinti, o null se non armonizzano (soglie in ADR-0004).
  * Conta solo la tinta RYB: saturazione e luminosità non entrano nella regola.
  */
-// shortcut: soglie tarate sulla Palette fissa; con colori personalizzati servono anche ΔL e S (ADR-0004).
 internal fun armonia(a: Colore, b: Colore): String? {
     val diff = abs(tintaRyb(a.h) - tintaRyb(b.h)) % 360
     val d = minOf(diff, 360 - diff)

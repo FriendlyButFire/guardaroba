@@ -30,8 +30,8 @@ class ArmoniaTest {
         "giallo + viola", "giallo + lilla", "senape + viola", "senape + lilla",
     )
 
-    private fun armonia(a: String, b: String) =
-        armonia(PALETTE.single { it.nome == a }, PALETTE.single { it.nome == b })
+    private fun armoniaDi(nomeA: String, nomeB: String) =
+        armonia(PALETTE.single { it.nome == nomeA }, PALETTE.single { it.nome == nomeB })
 
     @Test
     fun `ogni coppia di colori non neutri ha l'Armonia attesa, o nessuna`() {
@@ -52,16 +52,16 @@ class ArmoniaTest {
 
     @Test
     fun `i casi al confine delle soglie`() {
-        assertEquals("analoghi", armonia("azzurro", "turchese")) // 15°: oltre i 12° del monocromatico
-        assertEquals("analoghi", armonia("corallo", "senape")) // 70°: entro i 75°
-        assertEquals("complementari", armonia("corallo", "azzurro")) // 153,5°: entro 180° ± 30°
-        assertEquals(null, armonia("rosso", "turchese")) // 147,5°: appena fuori dai complementari
+        assertEquals("analoghi", armoniaDi("azzurro", "turchese")) // 15°: oltre i 12° del monocromatico
+        assertEquals("analoghi", armoniaDi("corallo", "senape")) // 70°: entro i 75°
+        assertEquals("complementari", armoniaDi("corallo", "azzurro")) // 153,5°: entro 180° ± 30°
+        assertEquals(null, armoniaDi("rosso", "turchese")) // 147,5°: appena fuori dai complementari
     }
 
     @Test
     fun `la RYB dà le coppie della moda, non quelle dell'HSL`() {
-        assertEquals("complementari", armonia("rosso", "verde bosco")) // HSL 135°
-        assertEquals("complementari", armonia("giallo", "viola")) // HSL 135°
-        assertEquals(null, armonia("rosso", "giallo"))
+        assertEquals("complementari", armoniaDi("rosso", "verde bosco")) // HSL 135°
+        assertEquals("complementari", armoniaDi("giallo", "viola")) // HSL 135°
+        assertEquals(null, armoniaDi("rosso", "giallo"))
     }
 }
