@@ -45,10 +45,12 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
 /** La Spiegazione dell'Outfit, o null se l'Outfit non è valido. */
 private fun spiegazione(outfit: Outfit): String? {
     val colori = outfit.capi.map { it.colorePrincipale }.distinct()
-    val armonia = when (colori.count { !it.neutro }) {
+    val nonNeutri = colori.filterNot { it.neutro }
+    val regola = when (nonNeutri.size) {
         0 -> "neutri"
         1 -> "un colore + neutri"
-        else -> return null // shortcut: 2 colori non neutri ancora mai validi; le Armonie arrivano col ticket 08
+        2 -> armonia(nonNeutri[0], nonNeutri[1]) ?: return null
+        else -> return null
     }
-    return colori.joinToString(" + ") { it.nome } + ": " + armonia
+    return colori.joinToString(" + ") { it.nome } + ": " + regola
 }
