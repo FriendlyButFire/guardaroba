@@ -10,3 +10,5 @@ build-notes/
 local.properties
 .kotlin/
 .worktrees/
+captures/
+.cxx/
