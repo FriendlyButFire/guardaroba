@@ -7,7 +7,7 @@ data class Capo(val id: Long, val categoria: Categoria, val colorePrincipale: Co
 
 /** Un insieme di Capi indossabili insieme; si identifica con l'insieme degli id dei suoi Capi. */
 data class Outfit(val capi: List<Capo>) {
-    val id: Set<Long> get() = capi.map { it.id }.toSet()
+    val idCapi: Set<Long> get() = capi.map { it.id }.toSet()
 }
 
 sealed interface Richiesta {
@@ -21,11 +21,12 @@ sealed interface Esito {
     data object Esaurite : Esito
 }
 
+// shortcut: niente Intero, Outfit solo Sopra + Sotto + Scarpe; l'alternativa Intero arriva col ticket 10.
 private val NECESSARIE = listOf(Categoria.SOPRA, Categoria.SOTTO, Categoria.SCARPE)
 
 /**
  * Propone a caso un Outfit valido fatto con i Capi del [guardaroba], escludendo quelli in [giàViste]
- * (insiemi di id dei Capi, vedi [Outfit.id]). [caso] è iniettabile per avere test deterministici.
+ * (insiemi di id dei Capi, vedi [Outfit.idCapi]). [caso] è iniettabile per avere test deterministici.
  */
 fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Long>>, caso: Random = Random.Default): Esito {
     val perCategoria = guardaroba.groupBy { it.categoria }
@@ -38,7 +39,7 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
         }
     }.mapNotNull { outfit -> spiegazione(outfit)?.let { Esito.Proposta(outfit, it) } }
     if (valide.isEmpty()) return Esito.NessunAbbinamento
-    return valide.filter { it.outfit.id !in giàViste }.randomOrNull(caso) ?: Esito.Esaurite
+    return valide.filter { it.outfit.idCapi !in giàViste }.randomOrNull(caso) ?: Esito.Esaurite
 }
 
 /** La Spiegazione dell'Outfit, o null se l'Outfit non è valido. */

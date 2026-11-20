@@ -90,7 +90,7 @@ class MotoreTest {
     }
 
     @Test
-    fun `Genera non aggiunge mai Accessori né Capospalla, e i loro colori non limitano`() {
+    fun `Genera non aggiunge Accessori né Capospalla, e il colore di un Accessorio non limita`() {
         val sopra = capo(Categoria.SOPRA, "rosso")
         val sotto = capo(Categoria.SOTTO, "denim")
         val scarpe = capo(Categoria.SCARPE, "bianco")
@@ -125,7 +125,7 @@ class MotoreTest {
 
         repeat(2) {
             val proposta = genera(guardaroba, giàViste) as Esito.Proposta
-            assertTrue(giàViste.add(proposta.outfit.id))
+            assertTrue(giàViste.add(proposta.outfit.idCapi))
         }
         assertEquals(Esito.Esaurite, genera(guardaroba, giàViste))
     }

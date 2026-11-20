@@ -34,7 +34,7 @@ class OutfitViewModel(private val dao: CapoDao) : ViewModel() {
         viewModelScope.launch {
             val capi = dao.tutti().first()
             val esito = proponi(capi.map { it.perMotore() }, Richiesta.Genera, giàViste)
-            if (esito is Esito.Proposta) giàViste += esito.outfit.id
+            if (esito is Esito.Proposta) giàViste += esito.outfit.idCapi
             stato = StatoOutfit(esito, capi.associateBy { it.id })
         }
     }

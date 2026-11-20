@@ -36,16 +36,15 @@ fun OutfitScreen(vm: OutfitViewModel = viewModel(factory = OutfitViewModel.Facto
             }
             is Esito.MancaCategoria -> Messaggio(
                 (if (esito.categorie.size == 1) "Ti manca: " else "Ti mancano: ") +
-                    esito.categorie.joinToString(", ") { it.nome } + ".\nAggiungili nel Guardaroba.",
+                    esito.categorie.joinToString(", ") { it.nome } + ".\nAggiungi questi Capi nel Guardaroba.",
             )
             Esito.NessunAbbinamento -> Messaggio("Nessun abbinamento possibile con i colori dei tuoi Capi.")
             Esito.Esaurite -> Messaggio("Hai visto tutte le Proposte possibili.")
         }
-        when (stato?.esito) {
-            null -> Button(onClick = vm::genera) { Text("Genera") }
-            is Esito.Proposta -> Button(onClick = vm::genera) { Text("Un altro") }
-            Esito.Esaurite -> Button(onClick = vm::ricomincia) { Text("Ricomincia") }
-            else -> Button(onClick = vm::genera) { Text("Riprova") }
+        if (stato?.esito == Esito.Esaurite) {
+            Button(onClick = vm::ricomincia) { Text("Ricomincia") }
+        } else {
+            Button(onClick = vm::genera) { Text(if (stato?.esito is Esito.Proposta) "Un altro" else "Genera") }
         }
     }
 }
