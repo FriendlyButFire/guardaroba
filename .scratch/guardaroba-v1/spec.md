@@ -120,7 +120,7 @@ Un'app Android personale e offline. Registro il mio Guardaroba (ogni Capo con Ca
 - **Regole di validità di un Outfit** (ADR-0004), valutate sui Colori principali di tutti i Capi tranne gli Accessori:
   - al massimo 2 colori non neutri distinti
   - 0 o 1 colore non neutro: sempre valido
-  - 2 colori non neutri: validi se monocromatici, analoghi o complementari, secondo soglie di tinta HSL che il builder fissa con una ricerca e aggiunge all'ADR-0004
+  - 2 colori non neutri: validi se monocromatici, analoghi o complementari, secondo soglie sulla tinta RYB (ruota del pittore, derivata dall'HSL salvato), fissate nell'ADR-0004
   - al massimo 1 Capo con Motivo diverso da tinta unita
   - il Colore secondario è ignorato
 - **Composizione**: (Sopra + Sotto | Intero) + Scarpe, obbligatori. Il Capospalla si aggiunge in Genera solo con filtro invernale o mezza stagione, se ne esiste uno compatibile. Gli Accessori entrano solo come Capo di partenza.
