@@ -43,22 +43,25 @@ import com.guardaroba.motore.Motivo
 import com.guardaroba.motore.PALETTE
 import com.guardaroba.motore.Stagione
 
-/** Form del nuovo Capo: un campo = uno stato + una [Sezione]. */
+/**
+ * Scheda di un Capo: nuovo se [iniziale] è null, altrimenti la modifica di [iniziale] (stesso id).
+ * Un campo = uno stato + una [Sezione]; nulla si salva finché non si preme Salva.
+ */
 @Composable
-fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit) {
-    var categoria by rememberSaveable { mutableStateOf<Categoria?>(null) }
-    var tipo by rememberSaveable { mutableStateOf<String?>(null) }
-    var colorePrincipale by rememberSaveable { mutableStateOf<String?>(null) }
-    var coloreSecondario by rememberSaveable { mutableStateOf<String?>(null) }
-    var motivo by rememberSaveable { mutableStateOf(Motivo.TINTA_UNITA) }
-    var stagione by rememberSaveable { mutableStateOf(Stagione.TUTTO_L_ANNO) }
-    var taglia by rememberSaveable { mutableStateOf("") }
+fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = null) {
+    var categoria by rememberSaveable { mutableStateOf(iniziale?.categoria) }
+    var tipo by rememberSaveable { mutableStateOf(iniziale?.tipo) }
+    var colorePrincipale by rememberSaveable { mutableStateOf(iniziale?.colorePrincipale) }
+    var coloreSecondario by rememberSaveable { mutableStateOf(iniziale?.coloreSecondario) }
+    var motivo by rememberSaveable { mutableStateOf(iniziale?.motivo ?: Motivo.TINTA_UNITA) }
+    var stagione by rememberSaveable { mutableStateOf(iniziale?.stagione ?: Stagione.TUTTO_L_ANNO) }
+    var taglia by rememberSaveable { mutableStateOf(iniziale?.taglia.orEmpty()) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Nuovo capo", style = MaterialTheme.typography.headlineSmall)
+        Text(if (iniziale == null) "Nuovo capo" else "Modifica capo", style = MaterialTheme.typography.headlineSmall)
 
         Sezione("Categoria") {
             Categoria.entries.forEach {
@@ -110,8 +113,9 @@ fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit) {
             Button(
                 enabled = c != null && t != null && p != null,
                 onClick = {
+                    // copy() del Capo modificato tiene id, creatoIl e ogni campo che il form non mostra.
                     onSalva(
-                        Capo(
+                        (iniziale ?: Capo(categoria = c!!, tipo = t!!, colorePrincipale = p!!)).copy(
                             categoria = c!!, tipo = t!!, colorePrincipale = p!!, coloreSecondario = coloreSecondario,
                             motivo = motivo, stagione = stagione, taglia = taglia.trim().ifEmpty { null },
                         ),

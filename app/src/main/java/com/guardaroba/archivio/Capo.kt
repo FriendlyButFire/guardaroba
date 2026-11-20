@@ -3,9 +3,9 @@ package com.guardaroba.archivio
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Entity
-import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Upsert
 import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Motivo
 import com.guardaroba.motore.Stagione
@@ -30,6 +30,7 @@ interface CapoDao {
     @Query("SELECT * FROM capo ORDER BY creatoIl")
     fun tutti(): Flow<List<Capo>>
 
-    @Insert
-    suspend fun inserisci(capo: Capo): Long
+    /** Inserisce un Capo nuovo (id 0) e ne ritorna l'id, oppure aggiorna quello con lo stesso id. */
+    @Upsert
+    suspend fun salva(capo: Capo): Long
 }
