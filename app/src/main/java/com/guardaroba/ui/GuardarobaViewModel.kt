@@ -1,5 +1,8 @@
 package com.guardaroba.ui
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
@@ -14,6 +17,7 @@ import kotlinx.coroutines.launch
 
 class GuardarobaViewModel(private val dao: CapoDao) : ViewModel() {
     val capi = dao.tutti().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    var filtro by mutableStateOf(Filtro())
 
     fun aggiungi(capo: Capo) {
         viewModelScope.launch { dao.inserisci(capo) }
