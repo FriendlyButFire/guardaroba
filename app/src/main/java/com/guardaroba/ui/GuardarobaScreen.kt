@@ -1,6 +1,7 @@
 package com.guardaroba.ui
 
-import androidx.activity.compose.BackHandler
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,22 +38,30 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.guardaroba.archivio.Capo
+import com.guardaroba.archivio.Foto
 import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Colore
 import com.guardaroba.motore.PALETTE
 import com.guardaroba.motore.Stagione
 import com.guardaroba.motore.colore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Il campione a schermo di un Colore della Palette. */
 fun Colore.campione(): Color = Color.hsl(h.toFloat(), s / 100f, l / 100f)
@@ -72,7 +81,6 @@ fun GuardarobaScreen(vm: GuardarobaViewModel = viewModel(factory = GuardarobaVie
         val iniziale = capi?.find { it.id == id }
         // Un Capo esistente si apre solo quando la lista è caricata (es. dopo che il processo è stato ricreato).
         if (id == NUOVO || iniziale != null) {
-            BackHandler { aperto = null }
             CapoForm(
                 onSalva = { vm.salva(it); aperto = null },
                 onAnnulla = { aperto = null },
@@ -191,11 +199,12 @@ private fun GrigliaCapi(capi: List<Capo>, onApri: (Capo) -> Unit, modifier: Modi
     }
 }
 
+/** La foto del Capo se c'è, altrimenti (o finché si carica) il riquadro del suo Colore principale. */
 @Composable
 fun RiquadroCapo(capo: Capo, modifier: Modifier = Modifier) {
     val principale = colore(capo.colorePrincipale)
     val forma = RoundedCornerShape(12.dp)
-    Column(
+    Box(
         modifier
             .padding(4.dp)
             .aspectRatio(1f)
@@ -203,10 +212,25 @@ fun RiquadroCapo(capo: Capo, modifier: Modifier = Modifier) {
             .background(principale.campione())
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, forma),
     ) {
-        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-            Text(capo.tipo, color = principale.testoSopra(), style = MaterialTheme.typography.labelLarge)
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                Text(capo.tipo, color = principale.testoSopra(), style = MaterialTheme.typography.labelLarge)
+            }
+            // Il Colore secondario come fascia in basso nel riquadro.
+            capo.coloreSecondario?.let { Box(Modifier.fillMaxWidth().weight(0.3f).background(colore(it).campione())) }
         }
-        // Il Colore secondario come fascia in basso nel riquadro.
-        capo.coloreSecondario?.let { Box(Modifier.fillMaxWidth().weight(0.3f).background(colore(it).campione())) }
+        capo.percorsoFoto?.let { FotoCapo(it, Modifier.matchParentSize()) }
     }
+}
+
+/** La foto [nome] di [Foto], ritagliata a riempire [modifier]; niente finché non è caricata o se il file manca. */
+@Composable
+fun FotoCapo(nome: String, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val immagine by produceState<ImageBitmap?>(null, nome) {
+        // Metà risoluzione (360 px) basta per una miniatura e dimezza la memoria della griglia.
+        val opzioni = BitmapFactory.Options().apply { inSampleSize = 2 }
+        value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(Foto(context).file(nome).path, opzioni)?.asImageBitmap() }
+    }
+    immagine?.let { Image(it, contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop) }
 }

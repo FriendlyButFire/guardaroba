@@ -22,6 +22,8 @@ data class Capo(
     @ColumnInfo(defaultValue = "TINTA_UNITA") val motivo: Motivo = Motivo.TINTA_UNITA,
     @ColumnInfo(defaultValue = "TUTTO_L_ANNO") val stagione: Stagione = Stagione.TUTTO_L_ANNO,
     val taglia: String? = null,
+    /** Il nome del file in [Foto], oppure null: la griglia mostra il riquadro del Colore principale. */
+    val percorsoFoto: String? = null,
     val creatoIl: Long = System.currentTimeMillis(),
 )
 
@@ -33,4 +35,13 @@ interface CapoDao {
     /** Inserisce un Capo nuovo (id 0) e ne ritorna l'id, oppure aggiorna quello con lo stesso id. */
     @Upsert
     suspend fun salva(capo: Capo): Long
+
+    /** Come [salva], poi cancella la foto che il Capo non usa più perché sostituita o rimossa. */
+    suspend fun salva(capo: Capo, foto: Foto): Long {
+        val precedente = percorsoFoto(capo.id)
+        return salva(capo).also { if (precedente != capo.percorsoFoto) foto.elimina(precedente) }
+    }
+
+    @Query("SELECT percorsoFoto FROM capo WHERE id = :id")
+    suspend fun percorsoFoto(id: Long): String?
 }

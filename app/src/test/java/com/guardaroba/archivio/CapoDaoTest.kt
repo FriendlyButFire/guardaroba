@@ -48,4 +48,42 @@ class CapoDaoTest {
         assertEquals(1L, id)
         assertEquals(listOf(modificato), capi)
     }
+
+    @Test
+    fun `sostituire o rimuovere la foto di un Capo cancella il file precedente`() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val foto = Foto(context)
+        val db = GuardarobaDatabase.apri(context)
+        val dao = db.capoDao()
+        fun nuovaFoto(nome: String) = nome.also { foto.file(it).apply { parentFile!!.mkdirs() }.writeText("foto") }
+        val id = dao.salva(Capo(categoria = Categoria.SOPRA, tipo = "camicia", colorePrincipale = "bianco", percorsoFoto = nuovaFoto("a.webp")), foto)
+        val capo = dao.tutti().first().single()
+
+        dao.salva(capo.copy(percorsoFoto = nuovaFoto("b.webp")), foto)
+        val dopoSostituzione = listOf("a.webp", "b.webp").map { foto.file(it).exists() }
+        dao.salva(capo.copy(percorsoFoto = null), foto)
+        val dopoRimozione = foto.file("b.webp").exists()
+        val capi = dao.tutti().first()
+        db.close()
+
+        assertEquals(1L, id)
+        assertEquals(listOf(false, true), dopoSostituzione)
+        assertEquals(false, dopoRimozione)
+        assertEquals(listOf(capo.copy(percorsoFoto = null)), capi)
+    }
+
+    @Test
+    fun `salvare un Capo senza cambiare la foto la tiene`() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val foto = Foto(context)
+        foto.file("a.webp").apply { parentFile!!.mkdirs() }.writeText("foto")
+        val db = GuardarobaDatabase.apri(context)
+        val dao = db.capoDao()
+        dao.salva(Capo(categoria = Categoria.SOPRA, tipo = "camicia", colorePrincipale = "bianco", percorsoFoto = "a.webp"), foto)
+
+        dao.salva(dao.tutti().first().single().copy(tipo = "polo"), foto)
+        db.close()
+
+        assertEquals(true, foto.file("a.webp").exists())
+    }
 }
