@@ -4,12 +4,18 @@
 
 **Blocked by:** 02
 
-**Status:** pronto-per-agente
+**Status:** chiuso
 
-- [ ] Motore (Kotlin puro): `proponi(guardaroba, richiesta, giàViste) → Esito` come da [[spec]], con caso a seed iniettabile
-- [ ] Outfit = Sopra + Sotto + Scarpe; Accessori mai aggiunti in Genera
-- [ ] Regole: solo Neutri valido; Neutri + 1 colore non neutro valido; ≥ 2 colori non neutri non valido (per ora)
-- [ ] Spiegazione per i due casi (es. "blu navy + beige: neutri")
-- [ ] Esito MancaCategoria con le Categorie mancanti, mostrato in UI
-- [ ] Schermata Outfit con miniature dei Capi, Spiegazione e "un altro"
-- [ ] Test JVM per ciascuna regola del Motore
+- [x] Motore (Kotlin puro): `proponi(guardaroba, richiesta, giàViste) → Esito` come da [[spec]], con caso a seed iniettabile
+- [x] Outfit = Sopra + Sotto + Scarpe; Accessori mai aggiunti in Genera
+- [x] Regole: solo Neutri valido; Neutri + 1 colore non neutro valido; ≥ 2 colori non neutri non valido (per ora)
+- [x] Spiegazione per i due casi (es. "blu navy + beige: neutri")
+- [x] Esito MancaCategoria con le Categorie mancanti, mostrato in UI
+- [x] Schermata Outfit con miniature dei Capi, Spiegazione e "un altro"
+- [x] Test JVM per ciascuna regola del Motore
+
+## Comments
+
+- `proponi` già filtra `giàViste` e restituisce `Esaurite` / `NessunAbbinamento` (servivano per avere un Esito sensato); la UI ha già "Ricomincia". Il ticket 12 resta per verificarlo con il test "N combinazioni → N Proposte distinte, poi Esaurite" e rifinire i messaggi.
+- `:motore` ha un suo `Capo` minimo (id, categoria, colorePrincipale); `OutfitViewModel` mappa le entità Room con `perMotore()`.
+- Verifica manuale della schermata Outfit su emulatore/telefono ancora da fare.
