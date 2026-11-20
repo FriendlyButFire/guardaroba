@@ -35,8 +35,10 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         viewModelScope.launch {
             val capi = dao.tutti().first()
             val esito = proponi(capi.map { it.perMotore() }, Richiesta.Genera, giàViste)
+            val salvata = esito is Esito.Proposta &&
+                esito.outfit.idCapi.let { preferiti.conICapi(it, it.size) != null }
             if (esito is Esito.Proposta) giàViste += esito.outfit.idCapi
-            stato = StatoOutfit(esito, capi.associateBy { it.id })
+            stato = StatoOutfit(esito, capi.associateBy { it.id }, salvata)
         }
     }
 

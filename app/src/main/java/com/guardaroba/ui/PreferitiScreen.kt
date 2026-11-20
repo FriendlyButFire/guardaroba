@@ -24,9 +24,9 @@ import com.guardaroba.archivio.PreferitoConCapi
 @Composable
 fun PreferitiScreen(vm: PreferitiViewModel = viewModel(factory = PreferitiViewModel.Factory)) {
     val preferiti by vm.preferiti.collectAsStateWithLifecycle()
+    val lista = preferiti ?: return
     when {
-        preferiti == null -> Unit
-        preferiti!!.isEmpty() -> Text(
+        lista.isEmpty() -> Text(
             "Nessun Preferito.\nSalva una Proposta dalla sezione Outfit.",
             Modifier.padding(24.dp),
             textAlign = TextAlign.Center,
@@ -36,7 +36,7 @@ fun PreferitiScreen(vm: PreferitiViewModel = viewModel(factory = PreferitiViewMo
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(preferiti!!, key = { it.preferito.id }) { SchedaPreferito(it) }
+            items(lista, key = { it.preferito.id }) { SchedaPreferito(it) }
         }
     }
 }
