@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dove la fotocamera di sistema scrive lo scatto; il form lo comprime in Foto e poi lo cancella. -->
+<paths>
+    <cache-path name="scatti" path="scatti/" />
+</paths>

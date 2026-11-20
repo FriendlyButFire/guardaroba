@@ -5,7 +5,7 @@ App personale che propone abbinamenti di colore tra i capi che l'utente possiede
 ## Capi
 
 **Capo**:
-Un singolo indumento posseduto dall'utente, descritto da categoria, tipo, colori, motivo, stagione e taglia.
+Un singolo indumento posseduto dall'utente, descritto da categoria, tipo, colori, motivo, stagione, taglia e una Foto opzionale.
 _Avoid_: Item, articolo, vestito
 
 **Guardaroba**:
@@ -46,6 +46,10 @@ Il periodo in cui si indossa un Capo: estivo, invernale, mezza stagione o tutto 
 
 **Taglia**:
 La misura del Capo, testo libero opzionale (es. "M", "42", "W32 L34"); solo informativa.
+
+**Foto**:
+L'immagine opzionale di un Capo, scattata o scelta dalla galleria; se ne conserva solo la versione compressa (ADR-0003).
+_Avoid_: Immagine
 
 ## Abbinamenti
 

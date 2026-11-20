@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MigrazioneTest {
     @Test
-    fun `un Capo della versione 1 diventa tinta unita, tutto l'anno, senza Colore secondario né Taglia`() = runBlocking {
+    fun `un Capo della versione 1 diventa tinta unita, tutto l'anno, senza Colore secondario, Taglia né foto`() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         // Il database v1 come lo lasciava il ticket 02 (createSql e identityHash da app/schemas/.../1.json).
         // shortcut: copiato a mano perché MigrationTestHelper legge gli schemi solo dagli assets, che Robolectric
@@ -30,14 +30,14 @@ class MigrazioneTest {
             close()
         }
 
-        // Room esegue l'AutoMigration 1→2 e verifica lo schema risultante contro l'entity.
+        // Room esegue in catena le AutoMigration 1→2→3→4 e verifica lo schema risultante contro l'entity.
         val db = GuardarobaDatabase.apri(context)
         val capi = db.capoDao().tutti().first()
         db.close()
 
         val atteso = Capo(
             id = 1, categoria = Categoria.SOPRA, tipo = "camicia", colorePrincipale = "blu_navy",
-            coloreSecondario = null, motivo = Motivo.TINTA_UNITA, stagione = Stagione.TUTTO_L_ANNO, taglia = null, creatoIl = 1,
+            coloreSecondario = null, motivo = Motivo.TINTA_UNITA, stagione = Stagione.TUTTO_L_ANNO, taglia = null, percorsoFoto = null, creatoIl = 1,
         )
         assertEquals(listOf(atteso), capi)
     }
