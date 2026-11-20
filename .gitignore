@@ -9,3 +9,4 @@ build-notes/
 .idea/
 local.properties
 .kotlin/
+.worktrees/
