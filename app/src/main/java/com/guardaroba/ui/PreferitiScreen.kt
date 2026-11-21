@@ -36,8 +36,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -56,6 +54,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -83,6 +82,7 @@ fun PreferitiScreen(
     var aperto by rememberSaveable { mutableStateOf<Long?>(null) }
     var capoAperto by rememberSaveable { mutableStateOf<Long?>(null) }
     var daRinominare by rememberSaveable { mutableStateOf<Long?>(null) } // il Preferito con la finestra Rinomina aperta
+    var validoVisto by rememberSaveable(aperto) { mutableStateOf<Boolean?>(null) } // il giudizio del Preferito aperto, l'ultima volta in vista
     val avvisi = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     capoAperto?.let { id ->
@@ -91,10 +91,12 @@ fun PreferitiScreen(
     }
     val lista = preferiti
     lista?.find { it.preferito.id == aperto }?.let { p ->
-        VistaPreferito(p, onIndietro = { aperto = null }, onApriCapo = { capoAperto = it.id })
+        VistaPreferito(p, validoVisto, onVisto = { validoVisto = it }, onIndietro = { aperto = null }, onApriCapo = { capoAperto = it.id })
         return
     }
     // Eliminare si annulla dallo snackbar: niente finestra di conferma (ADR-0014).
+    // shortcut: lo snackbar vive con questa schermata: aprendo un Preferito ricompare al ritorno, cambiando sezione si perde
+    // (il Preferito resta eliminato); spostarlo nello Scaffold dell'app se capita di volerlo annullare da un'altra sezione.
     fun elimina(p: PreferitoConCapi) {
         vm.elimina(p)
         scope.launch {
@@ -176,7 +178,7 @@ private fun SchedaPreferito(preferito: PreferitoConCapi, onApri: () -> Unit, onR
                 preferito.capi.sortedBy { it.categoria }.forEach { RiquadroOutfit(it, Modifier.weight(1f), it.id == cambiato?.id) }
             }
             // Spiegazione e validità seguono i Capi di adesso; un Preferito non più valido resta, segnalato (ADR-0011).
-            Box(Modifier.padding(8.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
+            Box(Modifier.padding(8.dp)) {
                 when (val giudizio = preferito.giudizio()) {
                     // La frase come in Outfit, la regola come etichetta (ADR-0012); più piccole, perché qui sono tante.
                     is Giudizio.Valido -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -196,8 +198,24 @@ private fun SchedaPreferito(preferito: PreferitoConCapi, onApri: () -> Unit, onR
 /** Il Preferito in grande, composto come in Outfit e giudicato con i Capi di adesso (ADR-0011, ADR-0014); toccare un riquadro apre il Capo. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun VistaPreferito(preferito: PreferitoConCapi, onIndietro: () -> Unit, onApriCapo: (Capo) -> Unit) {
+private fun VistaPreferito(
+    preferito: PreferitoConCapi,
+    validoVisto: Boolean?,
+    onVisto: (Boolean) -> Unit,
+    onIndietro: () -> Unit,
+    onApriCapo: (Capo) -> Unit,
+) {
     BackHandler(onBack = onIndietro)
+    val giudizio = preferito.giudizio()
+    val valido = giudizio is Giudizio.Valido
+    val view = LocalView.current
+    // Il giudizio cambia solo nella scheda del Capo, che prende il posto di questa vista: al ritorno la vista è nuova e una live
+    // region nuova non si annuncia. Così TalkBack sente il cambio confrontando con [validoVisto].
+    LaunchedEffect(valido) {
+        @Suppress("DEPRECATION") // nessuna alternativa per un annuncio che non nasce da un cambio sotto gli occhi
+        if (validoVisto != null && validoVisto != valido) view.announceForAccessibility(if (valido) "Di nuovo valido" else "Non più valido")
+        onVisto(valido)
+    }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(preferito.preferito.nome ?: "Senza nome", maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -213,12 +231,9 @@ private fun VistaPreferito(preferito: PreferitoConCapi, onIndietro: () -> Unit, 
         ) {
             val cambiato = preferito.responsabile()
             OutfitVerticale(preferito.capi, onApri = onApriCapo, cambiato = cambiato)
-            // Tornando dalla scheda del Capo il giudizio può cambiare: TalkBack lo annuncia.
-            Box(Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
-                when (val giudizio = preferito.giudizio()) {
-                    is Giudizio.Valido -> Spiegazione(preferito.perché(), giudizio.spiegazione)
-                    is Giudizio.NonValido -> NonPiùValido(giudizio.ragione, inGrande = true, cambiato)
-                }
+            when (giudizio) {
+                is Giudizio.Valido -> Spiegazione(preferito.perché(), giudizio.spiegazione)
+                is Giudizio.NonValido -> NonPiùValido(giudizio.ragione, inGrande = true, cambiato)
             }
         }
     }
@@ -261,11 +276,11 @@ fun FinestraNome(titolo: String, attuale: String, onChiudi: () -> Unit, onConfer
     // Il campo prende il fuoco con il nome attuale tutto selezionato: si riscrive senza cancellarlo a mano.
     var nome by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue(attuale, TextRange(0, attuale.length))) }
     val fuoco = remember { FocusRequester() }
-    LaunchedEffect(Unit) { fuoco.requestFocus() }
     AlertDialog(
         onDismissRequest = onChiudi,
         title = { Text(titolo) },
         text = {
+            LaunchedEffect(Unit) { fuoco.requestFocus() } // qui dentro: il campo sta nella finestra della dialog, composta a parte
             OutlinedTextField(
                 nome,
                 { nome = it },

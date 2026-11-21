@@ -13,12 +13,12 @@ class TestoSopraTest {
     }
 
     @Test
-    fun `il testo su ogni Colore della Palette arriva a 4,5 a 1, o al massimo possibile tra nero e bianco`() {
+    fun `il testo su ogni Colore della Palette arriva a 4,5 a 1, ed è il migliore tra nero e bianco`() {
         PALETTE.forEach {
             val sfondo = it.campione()
             val migliore = maxOf(contrasto(Color.Black, sfondo), contrasto(Color.White, sfondo))
             val scelto = contrasto(it.testoSopra(), sfondo)
-            assertTrue("${it.nome}: $scelto", scelto >= minOf(4.5f, migliore))
+            assertTrue("${it.nome}: $scelto", scelto >= 4.5f && scelto == migliore)
         }
     }
 }
