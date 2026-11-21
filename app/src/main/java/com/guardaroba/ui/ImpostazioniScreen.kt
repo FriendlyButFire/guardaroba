@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-/** Le Impostazioni: una sezione per argomento. Esporta sta sotto il Backup, a cui rimandano i suoi avvisi. */
+/** Le Impostazioni: una sezione per argomento. Esporta sta sotto il Backup, a cui rimandano i suoi avvisi; Importa la segue. */
 @Composable
 fun ImpostazioniScreen() {
     Column(
@@ -19,5 +19,6 @@ fun ImpostazioniScreen() {
     ) {
         BackupSezione()
         EsportaSezione()
+        ImportaSezione()
     }
 }

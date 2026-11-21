@@ -52,6 +52,9 @@ class Foto(context: Context) {
         return nome
     }
 
+    /** I nomi di tutte le foto sul disco. */
+    fun tutte(): List<String> = cartella.list()?.toList().orEmpty()
+
     /** Cancella la foto [nome], se c'è. */
     fun elimina(nome: String?) {
         if (nome != null) file(nome).delete()

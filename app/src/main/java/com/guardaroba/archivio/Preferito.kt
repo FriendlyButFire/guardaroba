@@ -81,6 +81,14 @@ interface PreferitoDao {
     @Insert
     suspend fun inserisci(preferito: Preferito): Long
 
+    /** Solo per [Importazione]: i Preferiti con i loro id, senza il controllo dei doppioni di [salva]. */
+    @Insert
+    suspend fun inserisciPreferiti(preferiti: List<Preferito>)
+
+    /** Solo per [Importazione], dentro la transazione che sostituisce il Guardaroba; la cascata toglie preferito_capo. */
+    @Query("DELETE FROM preferito")
+    suspend fun eliminaTutti()
+
     @Insert
     suspend fun inserisci(righe: List<PreferitoCapo>)
 }

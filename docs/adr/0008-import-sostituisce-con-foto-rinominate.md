@@ -1,0 +1,7 @@
+# L'import sostituisce tutto il Guardaroba, con le foto copiate sotto un nome nuovo
+
+L'import di uno ZIP di ADR-0007 sostituisce Capi, Preferiti e foto: niente unione con il Guardaroba attuale. L'utente sceglie il file e poi conferma in un dialogo; la validazione arriva dopo la conferma e, se fallisce, non cambia niente.
+
+L'archivio è valido solo se tutto torna: solo le voci `guardaroba.json` e `foto/<nome>` (nessun percorso annidato, nessun doppione), la `versione` uguale a quella attuale, ogni campo presente e del tipo giusto (niente conversioni implicite di org.json), enum e Colori della Palette conosciuti, id positivi e unici, ogni `percorsoFoto` presente nello ZIP, ogni Preferito con almeno un Capo, senza doppioni e tutti presenti. Una voce oltre i 10 MB rende l'archivio non valido: è un limite contro gli ZIP bomb, lontanissimo dalle foto compresse di ADR-0003.
+
+Le foto dello ZIP si scrivono nella cartella delle Foto con un nome nuovo (UUID), accanto a quelle attuali, mentre si legge l'archivio. Se la lettura, la validazione o la transazione falliscono, si cancellano solo quei file nuovi. Capi e Preferiti, con i loro id, si sostituiscono in un'unica transazione Room. Solo dopo il commit si cancellano le foto che nessun Capo usa più. Un'uscita a metà lascia al massimo dei file in più, che il prossimo import pulisce; non esiste un momento in cui il database punta a foto già cancellate. Il prezzo è che `percorsoFoto` cambia nome dopo l'import, ma il contenuto è identico, ed è il contenuto quello che conta.

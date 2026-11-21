@@ -3,6 +3,7 @@ package com.guardaroba.archivio
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Entity
+import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Transaction
@@ -65,6 +66,14 @@ interface CapoDao {
     // La cascata su preferito_capo.capoId toglierebbe solo la riga: il Preferito va eliminato qui, prima del Capo.
     @Query("DELETE FROM preferito WHERE id IN (SELECT preferitoId FROM preferito_capo WHERE capoId = :id)")
     suspend fun eliminaPreferitiConCapo(id: Long)
+
+    /** Solo per [Importazione], che ha già validato e cancella i Preferiti prima. */
+    @Insert
+    suspend fun inserisci(capi: List<Capo>)
+
+    /** Solo per [Importazione], dentro la transazione che sostituisce il Guardaroba. */
+    @Query("DELETE FROM capo")
+    suspend fun eliminaTutti()
 
     // Solo via [elimina]: da sola lascerebbe i Preferiti con un Capo in meno e la foto orfana.
     @Query("DELETE FROM capo WHERE id = :id")
