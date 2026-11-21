@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Consiglio
 import com.guardaroba.motore.Esito
 import com.guardaroba.motore.Stagione
@@ -75,15 +76,18 @@ fun OutfitScreen(vm: OutfitViewModel) {
                 }
                 is Esito.MancaCategoria -> Messaggio(
                     (if (esito.categorie.size == 1) "Ti manca: " else "Ti mancano: ") +
-                        esito.categorie.joinToString(", ") { it.nome } + ".\nAggiungi questi Capi nel Guardaroba.",
+                        esito.categorie.joinToString(", ") { it.nome } + "." +
+                        (if (Categoria.SOPRA in esito.categorie || Categoria.SOTTO in esito.categorie) "\nAl posto di Sopra e Sotto va bene anche un Intero." else "") +
+                        "\nAggiungi i Capi che mancano nel Guardaroba" + (if (vm.filtroStagione != null) " o cambia filtro Stagione." else "."),
                 )
                 Esito.NessunAbbinamento -> Messaggio(
-                    if (vm.partenza != null) "Nessun abbinamento per questo capo." else "Nessun abbinamento possibile con i colori dei tuoi Capi.",
+                    if (vm.partenza != null) "Nessun abbinamento per questo capo." else "Nessun abbinamento possibile con i colori e i motivi dei tuoi Capi.",
                 )
-                Esito.Esaurite -> Messaggio("Hai visto tutte le Proposte possibili.")
+                Esito.Esaurite -> Messaggio("Hai visto tutte le Proposte possibili.\nPremi Ricomincia per rivederle.")
             }
             stato?.consigliati?.takeIf { it.isNotEmpty() }?.let { ColoriConsigliati(it) }
             // "tutto l'anno" entra già in ogni filtro, quindi non è una voce. Vale dalla prossima Proposta.
+            Text("Filtro Stagione", style = MaterialTheme.typography.labelLarge)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 (listOf(null) + (Stagione.entries - Stagione.TUTTO_L_ANNO)).forEach {
                     FilterChip(

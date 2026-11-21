@@ -26,4 +26,5 @@ cd /x                      # or /x/.worktrees/NN inside a worktree
 - APK: `app/build/outputs/apk/debug/app-debug.apk`. Test reports: `*/build/reports/tests/`.
 - `local.properties` is git-ignored; each checkout or worktree needs one: `sdk.dir=C\:\\Users\\<utente>\\AppData\\Local\\Android\\Sdk` (the backslashes must be doubled).
 - `android.overridePathCheck=true` in `gradle.properties` lets Android Studio open the project from its real path. AGP prints an "experimental option" warning because of it; ignore the warning.
+- On a phone: `bash scripts/installa-sul-telefono.sh` is a step-by-step wizard (USB debugging, `adb install`, sideload alternative, `bmgr` backup/restore check).
 - `subst` must get the short path (`cygpath -d`): the `Π` in a `cmd` argument gets mangled too. To remove the drive: `cmd //c "subst X: /d"`.

@@ -20,6 +20,8 @@ import com.guardaroba.motore.coloriConsigliati
 import com.guardaroba.motore.colore
 import com.guardaroba.motore.proponi
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -48,6 +50,18 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
 
     /** Gli Outfit già proposti in questa sessione, come insiemi di id dei Capi. */
     private val giàViste = mutableSetOf<Set<Long>>()
+
+    init {
+        // Il Guardaroba è cambiato (Capo aggiunto, modificato, eliminato, import): la Proposta mostrata può citare Capi spariti
+        // o colori vecchi, e salvarla romperebbe la foreign key. Si riparte; con Parti da si rigenera se il Capo c'è ancora.
+        viewModelScope.launch {
+            dao.tutti().distinctUntilChanged().drop(1).collect { capi ->
+                giàViste.clear()
+                stato = null
+                if (capi.none { it.id == partenza }) partenza = null else genera()
+            }
+        }
+    }
 
     /** Chiede una nuova Proposta al Motore ("Genera" e "un altro"), partendo dal Capo di [partenza] se c'è. */
     fun genera() {
@@ -79,6 +93,7 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
 
     /** Cambia il filtro Stagione; le Proposte già viste ripartono da zero (ADR-0006). */
     fun scegliStagione(stagione: Stagione?) {
+        if (stagione == filtroStagione) return // ritoccare il filtro scelto non è cambiarlo
         filtroStagione = stagione
         giàViste.clear()
     }
