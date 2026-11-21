@@ -13,6 +13,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,6 +38,12 @@ fun OutfitScreen(vm: OutfitViewModel = viewModel(factory = OutfitViewModel.Facto
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        vm.partenza?.let { id ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Parti da: " + (stato?.capi?.get(id)?.tipo ?: "…"), style = MaterialTheme.typography.titleSmall)
+                TextButton(onClick = { vm.partiDa(null) }) { Text("Genera a caso") }
+            }
+        }
         when (val esito = stato?.esito) {
             null -> Messaggio("Premi Genera per ricevere un Outfit fatto con i tuoi Capi.")
             is Esito.Proposta -> {
@@ -59,7 +66,9 @@ fun OutfitScreen(vm: OutfitViewModel = viewModel(factory = OutfitViewModel.Facto
                 (if (esito.categorie.size == 1) "Ti manca: " else "Ti mancano: ") +
                     esito.categorie.joinToString(", ") { it.nome } + ".\nAggiungi questi Capi nel Guardaroba.",
             )
-            Esito.NessunAbbinamento -> Messaggio("Nessun abbinamento possibile con i colori dei tuoi Capi.")
+            Esito.NessunAbbinamento -> Messaggio(
+                if (vm.partenza != null) "Nessun abbinamento per questo capo." else "Nessun abbinamento possibile con i colori dei tuoi Capi.",
+            )
             Esito.Esaurite -> Messaggio("Hai visto tutte le Proposte possibili.")
         }
         // "tutto l'anno" entra già in ogni filtro, quindi non è una voce. Vale dalla prossima Proposta.

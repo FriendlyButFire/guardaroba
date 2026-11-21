@@ -35,6 +35,10 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
     var filtroStagione by mutableStateOf<Stagione?>(null)
         private set
 
+    /** L'id del Capo di "Parti da questo capo"; null = Genera. */
+    var partenza by mutableStateOf<Long?>(null)
+        private set
+
     /** Gli Outfit tra i Preferiti, come insiemi di id dei Capi: segue anche le eliminazioni dalla lista. */
     val salvati = preferiti.tutti()
         .map { lista -> lista.map { p -> p.capi.map { it.id }.toSet() }.toSet() }
@@ -43,11 +47,15 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
     /** Gli Outfit già proposti in questa sessione, come insiemi di id dei Capi. */
     private val giàViste = mutableSetOf<Set<Long>>()
 
-    /** Chiede una nuova Proposta al Motore ("Genera" e "un altro"). */
+    /** Chiede una nuova Proposta al Motore ("Genera" e "un altro"), partendo dal Capo di [partenza] se c'è. */
     fun genera() {
         viewModelScope.launch {
             val capi = dao.tutti().first()
-            val esito = proponi(capi.map { it.perMotore() }, Richiesta.Genera(filtroStagione), giàViste)
+            val perMotore = capi.map { it.perMotore() }
+            val capoDiPartenza = perMotore.find { it.id == partenza }
+            if (capoDiPartenza == null) partenza = null // eliminato nel frattempo: si torna a Genera
+            val richiesta = capoDiPartenza?.let { Richiesta.PartiDa(it, filtroStagione) } ?: Richiesta.Genera(filtroStagione)
+            val esito = proponi(perMotore, richiesta, giàViste)
             if (esito is Esito.Proposta) giàViste += esito.outfit.idCapi
             stato = StatoOutfit(esito, capi.associateBy { it.id })
         }
@@ -57,6 +65,14 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
     fun salva(nome: String) {
         val proposta = stato?.esito as? Esito.Proposta ?: return
         viewModelScope.launch { preferiti.salva(proposta.spiegazione, proposta.outfit.idCapi, nome) }
+    }
+
+    /** "Parti da questo capo" ([id]) o, con null, ritorno a Genera: le Proposte già viste ripartono da zero. */
+    fun partiDa(id: Long?) {
+        partenza = id
+        giàViste.clear()
+        stato = null
+        if (id != null) genera()
     }
 
     /** Cambia il filtro Stagione; le Proposte già viste ripartono da zero (ADR-0006). */

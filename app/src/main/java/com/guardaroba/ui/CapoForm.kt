@@ -73,7 +73,7 @@ import java.io.IOException
  * mentre quella di [iniziale] la cancella [com.guardaroba.archivio.CapoDao.salva] solo a Salva.
  */
 @Composable
-fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = null) {
+fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = null, onPartiDa: (() -> Unit)? = null) {
     var categoria by rememberSaveable { mutableStateOf(iniziale?.categoria) }
     var tipo by rememberSaveable { mutableStateOf(iniziale?.tipo) }
     var colorePrincipale by rememberSaveable { mutableStateOf(iniziale?.colorePrincipale) }
@@ -125,6 +125,8 @@ fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = n
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(if (iniziale == null) "Nuovo capo" else "Modifica capo", style = MaterialTheme.typography.headlineSmall)
+        // Parte dal Capo salvato: le modifiche non salvate qui si perdono, come con Annulla.
+        onPartiDa?.let { Button(onClick = it) { Text("Parti da questo capo") } }
 
         Sezione("Categoria") {
             Categoria.entries.forEach {
