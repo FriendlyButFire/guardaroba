@@ -30,6 +30,9 @@ import com.guardaroba.motore.Capo as CapoMotore
 /** L'ultimo Esito del Motore, con i Capi dell'Archivio per mostrarne le miniature e i Colori consigliati per il Capo di partenza. */
 data class StatoOutfit(val esito: Esito, val capi: Map<Long, Capo>, val consigliati: List<Consiglio>)
 
+/** Il Capo di partenza ha [stagioneCapo], che il [filtro] attivo non ammette (ADR-0008). */
+data class FuoriStagione(val stagioneCapo: Stagione, val filtro: Stagione)
+
 class OutfitViewModel(private val dao: CapoDao, private val preferiti: PreferitoDao) : ViewModel() {
     var stato by mutableStateOf<StatoOutfit?>(null)
         private set
@@ -42,8 +45,8 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
     var partenza by mutableStateOf<Long?>(null)
         private set
 
-    /** La Stagione del Capo di partenza quando il filtro non lo ammette: l'avviso da mostrare (ADR-0008); null = nessun avviso. */
-    var avvisoFuoriStagione by mutableStateOf<Stagione?>(null)
+    /** L'avviso da mostrare quando il filtro non ammette il Capo di partenza (ADR-0008); null = nessun avviso. */
+    var avvisoFuoriStagione by mutableStateOf<FuoriStagione?>(null)
         private set
 
     /** Gli Outfit tra i Preferiti, come insiemi di id dei Capi: segue anche le eliminazioni dalla lista. */
@@ -114,6 +117,7 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         partenza = id
         giàViste.clear()
         stato = null
+        avvisoFuoriStagione = null
         if (id != null) {
             avvisaSeFuoriStagione()
             genera()
@@ -128,14 +132,19 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         if (partenza != null) avvisaSeFuoriStagione()
     }
 
-    /** Avvisa una volta, all'avvio di "Parti da questo capo" o al cambio di filtro, se il Capo di partenza è fuori stagione (ADR-0008). */
+    /**
+     * Avvisa una volta, all'avvio di "Parti da questo capo" o al cambio di filtro, se il Capo di partenza è fuori stagione (ADR-0008).
+     * Cambiare la Stagione del Capo di partenza nel Guardaroba non riavvisa: rigenera soltanto.
+     */
     private fun avvisaSeFuoriStagione() {
         viewModelScope.launch {
             val capo = dao.tutti().first().find { it.id == partenza } ?: return@launch
-            avvisoFuoriStagione = capo.stagione.takeIf { fuoriStagione(it, filtroStagione) }
+            val filtro = filtroStagione
+            avvisoFuoriStagione = if (filtro != null && fuoriStagione(capo.stagione, filtro)) FuoriStagione(capo.stagione, filtro) else null
         }
     }
 
+    /** "Ok" sull'avviso fuori stagione. */
     fun chiudiAvviso() {
         avvisoFuoriStagione = null
     }

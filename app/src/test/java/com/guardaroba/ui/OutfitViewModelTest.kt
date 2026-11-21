@@ -150,17 +150,22 @@ class OutfitViewModelTest {
         assertNull(vm.avvisoFuoriStagione)
 
         vm.partiDa(id)
-        aspetta { vm.avvisoFuoriStagione == Stagione.INVERNALE && vm.stato?.esito is Esito.Proposta }
+        aspetta { vm.avvisoFuoriStagione == FuoriStagione(Stagione.INVERNALE, Stagione.ESTIVO) && vm.stato?.esito is Esito.Proposta }
         vm.chiudiAvviso()
         vm.genera() // "Un altro"
         aspetta { vm.stato?.esito == Esito.Esaurite }
         assertNull(vm.avvisoFuoriStagione)
 
         vm.scegliStagione(Stagione.MEZZA_STAGIONE)
-        aspetta { vm.avvisoFuoriStagione == Stagione.INVERNALE }
+        aspetta { vm.avvisoFuoriStagione == FuoriStagione(Stagione.INVERNALE, Stagione.MEZZA_STAGIONE) }
         vm.chiudiAvviso()
         vm.scegliStagione(Stagione.INVERNALE)
         repeat(20) { shadowOf(Looper.getMainLooper()).idle(); Thread.sleep(10) }
+        assertNull(vm.avvisoFuoriStagione)
+
+        vm.scegliStagione(Stagione.ESTIVO)
+        aspetta { vm.avvisoFuoriStagione != null }
+        vm.partiDa(null) // "Genera a caso", Importa o Capo eliminato: l'avviso non vale più
         assertNull(vm.avvisoFuoriStagione)
     }
 }

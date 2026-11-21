@@ -44,10 +44,7 @@ import com.guardaroba.motore.Stagione
 fun OutfitScreen(vm: OutfitViewModel) {
     val stato = vm.stato
     val preferiti by vm.outfitPreferiti.collectAsStateWithLifecycle()
-    val filtro = vm.filtroStagione
-    vm.avvisoFuoriStagione?.let { stagione ->
-        if (filtro != null) AvvisoFuoriStagione(stagione, filtro, vm::chiudiAvviso)
-    }
+    vm.avvisoFuoriStagione?.let { AvvisoFuoriStagione(it, vm::chiudiAvviso) }
     // heightIn: il contenuto corto resta centrato, quello lungo (Colori consigliati) scorre.
     BoxWithConstraints(Modifier.fillMaxSize()) {
         Column(
@@ -137,9 +134,11 @@ private fun mancano(categorie: List<Categoria>, partenza: Categoria?, conFiltro:
         "\nAggiungi i Capi che mancano nel Guardaroba" + (if (conFiltro) " o cambia filtro Stagione." else ".")
 }
 
-/** ADR-0008: il Capo di partenza con [stagione] resta nelle Proposte anche se il [filtro] non lo ammette; gli altri Capi seguono il filtro. */
+/** ADR-0008: il Capo di partenza resta nelle Proposte anche se il filtro non lo ammette; gli altri Capi seguono il filtro. */
 @Composable
-private fun AvvisoFuoriStagione(stagione: Stagione, filtro: Stagione, onOk: () -> Unit) {
+private fun AvvisoFuoriStagione(avviso: FuoriStagione, onOk: () -> Unit) {
+    val (stagione, filtro) = avviso
+    // Il plurale non si ricava da Stagione.nome; "tutto l'anno" non è mai un filtro, ma il when deve coprirlo.
     val capi = when (filtro) {
         Stagione.ESTIVO -> "capi estivi"
         Stagione.INVERNALE -> "capi invernali"
