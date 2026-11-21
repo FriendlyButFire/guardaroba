@@ -48,9 +48,9 @@ class EsportazioneTest {
 
         val voci = esporta()
 
-        assertEquals(setOf(Esportazione.JSON, "foto/a.webp"), voci.keys)
+        assertEquals(setOf(Esportazione.NOME_JSON, "foto/a.webp"), voci.keys)
         assertArrayEquals(bytesFoto, voci.getValue("foto/a.webp"))
-        val json = JSONObject(voci.getValue(Esportazione.JSON).decodeToString())
+        val json = JSONObject(voci.getValue(Esportazione.NOME_JSON).decodeToString())
         assertEquals(1, json.getInt("versione"))
         val capi = json.getJSONArray("capi")
         assertEquals(2, capi.length())
@@ -85,14 +85,14 @@ class EsportazioneTest {
 
         val voci = esporta()
 
-        assertEquals(setOf(Esportazione.JSON), voci.keys)
-        val capo = JSONObject(voci.getValue(Esportazione.JSON).decodeToString()).getJSONArray("capi").getJSONObject(0)
+        assertEquals(setOf(Esportazione.NOME_JSON), voci.keys)
+        val capo = JSONObject(voci.getValue(Esportazione.NOME_JSON).decodeToString()).getJSONArray("capi").getJSONObject(0)
         assertTrue(capo.isNull("percorsoFoto"))
     }
 
     @Test
     fun `un Guardaroba vuoto si esporta comunque`() {
-        val json = JSONObject(esporta().getValue(Esportazione.JSON).decodeToString())
+        val json = JSONObject(esporta().getValue(Esportazione.NOME_JSON).decodeToString())
 
         assertEquals(0, json.getJSONArray("capi").length())
         assertEquals(0, json.getJSONArray("preferiti").length())
