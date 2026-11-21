@@ -182,6 +182,47 @@ class MotoreTest {
     }
 
     @Test
+    fun `con N combinazioni valide si ottengono N Proposte distinte, poi Esaurite`() {
+        val sopra = listOf("nero", "bianco", "beige").map { capo(Categoria.SOPRA, it) }
+        val sotto = listOf("denim", "grigio_chiaro").map { capo(Categoria.SOTTO, it) }
+        val scarpe = listOf("nero", "marrone").map { capo(Categoria.SCARPE, it) }
+        val guardaroba = sopra + sotto + scarpe
+        val n = sopra.size * sotto.size * scarpe.size
+        val giàViste = mutableSetOf<Set<Long>>()
+
+        repeat(n) {
+            val proposta = genera(guardaroba, giàViste) as Esito.Proposta
+            assertTrue(giàViste.add(proposta.outfit.idCapi))
+        }
+        assertEquals(Esito.Esaurite, genera(guardaroba, giàViste))
+        assertEquals(Esito.Esaurite, genera(guardaroba, giàViste))
+    }
+
+    @Test
+    fun `la Proposta è scelta a caso tra le valide`() {
+        val guardaroba = listOf(
+            capo(Categoria.SOPRA, "nero"), capo(Categoria.SOPRA, "bianco"), capo(Categoria.SOPRA, "beige"),
+            capo(Categoria.SOTTO, "denim"), capo(Categoria.SOTTO, "grigio_chiaro"),
+            capo(Categoria.SCARPE, "nero"),
+        )
+
+        val prime = (0..19).map { seed -> (proponi(guardaroba, Richiesta.Genera(), emptySet(), Random(seed)) as Esito.Proposta).outfit.idCapi }
+
+        assertTrue(prime.toSet().size > 1)
+    }
+
+    @Test
+    fun `senza Outfit validi l'Esito resta NessunAbbinamento anche dopo altre Proposte viste, mai Esaurite`() {
+        val guardaroba = listOf(
+            capo(Categoria.SOPRA, "rosso"),
+            capo(Categoria.SOTTO, "giallo"),
+            capo(Categoria.SCARPE, "nero"),
+        )
+
+        assertEquals(Esito.NessunAbbinamento, genera(guardaroba, giàViste = setOf(setOf(99L, 100L))))
+    }
+
+    @Test
     fun `due Capi a righe non compaiono mai nella stessa Proposta`() {
         val sopraRighe = capo(Categoria.SOPRA, "bianco", Motivo.RIGHE)
         val sopraTinta = capo(Categoria.SOPRA, "nero")
