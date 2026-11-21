@@ -18,6 +18,7 @@ import com.guardaroba.motore.Richiesta
 import com.guardaroba.motore.Stagione
 import com.guardaroba.motore.coloriConsigliati
 import com.guardaroba.motore.colore
+import com.guardaroba.motore.fuoriStagione
 import com.guardaroba.motore.proponi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
@@ -39,6 +40,10 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
 
     /** L'id del Capo di "Parti da questo capo"; null = Genera. */
     var partenza by mutableStateOf<Long?>(null)
+        private set
+
+    /** La Stagione del Capo di partenza quando il filtro non lo ammette: l'avviso da mostrare (ADR-0008); null = nessun avviso. */
+    var avvisoFuoriStagione by mutableStateOf<Stagione?>(null)
         private set
 
     /** Gli Outfit tra i Preferiti, come insiemi di id dei Capi: segue anche le eliminazioni dalla lista. */
@@ -109,7 +114,10 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         partenza = id
         giàViste.clear()
         stato = null
-        if (id != null) genera()
+        if (id != null) {
+            avvisaSeFuoriStagione()
+            genera()
+        }
     }
 
     /** Cambia il filtro Stagione; le Proposte già viste ripartono da zero (ADR-0006). */
@@ -117,6 +125,19 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         if (stagione == filtroStagione) return // ritoccare il filtro scelto non è cambiarlo
         filtroStagione = stagione
         giàViste.clear()
+        if (partenza != null) avvisaSeFuoriStagione()
+    }
+
+    /** Avvisa una volta, all'avvio di "Parti da questo capo" o al cambio di filtro, se il Capo di partenza è fuori stagione (ADR-0008). */
+    private fun avvisaSeFuoriStagione() {
+        viewModelScope.launch {
+            val capo = dao.tutti().first().find { it.id == partenza } ?: return@launch
+            avvisoFuoriStagione = capo.stagione.takeIf { fuoriStagione(it, filtroStagione) }
+        }
+    }
+
+    fun chiudiAvviso() {
+        avvisoFuoriStagione = null
     }
 
     /** Azzera le Proposte già viste e ne chiede una nuova. */

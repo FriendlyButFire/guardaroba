@@ -8,6 +8,7 @@ import com.guardaroba.archivio.Capo
 import com.guardaroba.archivio.GuardarobaDatabase
 import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Esito
+import com.guardaroba.motore.Stagione
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -136,5 +137,30 @@ class OutfitViewModelTest {
 
         aspetta { vm.stato?.consigliati?.none { it.colore.id == "rosso" } == true }
         assertTrue(vm.stato!!.consigliati.any { it.colore.id == "bianco" })
+    }
+
+    @Test
+    fun `partire da un Capo fuori stagione, o cambiare filtro mentre ci si parte, avvisa una volta sola`() {
+        val maglione = Capo(categoria = Categoria.SOPRA, tipo = "maglione", colorePrincipale = "bianco", stagione = Stagione.INVERNALE)
+        val id = runBlocking { db.capoDao().salva(maglione) }
+        vm.scegliStagione(Stagione.ESTIVO)
+
+        vm.partiDa(capi[0].id) // tutto l'anno: mai fuori stagione
+        aspetta { vm.stato?.esito is Esito.Proposta }
+        assertNull(vm.avvisoFuoriStagione)
+
+        vm.partiDa(id)
+        aspetta { vm.avvisoFuoriStagione == Stagione.INVERNALE && vm.stato?.esito is Esito.Proposta }
+        vm.chiudiAvviso()
+        vm.genera() // "Un altro"
+        aspetta { vm.stato?.esito == Esito.Esaurite }
+        assertNull(vm.avvisoFuoriStagione)
+
+        vm.scegliStagione(Stagione.MEZZA_STAGIONE)
+        aspetta { vm.avvisoFuoriStagione == Stagione.INVERNALE }
+        vm.chiudiAvviso()
+        vm.scegliStagione(Stagione.INVERNALE)
+        repeat(20) { shadowOf(Looper.getMainLooper()).idle(); Thread.sleep(10) }
+        assertNull(vm.avvisoFuoriStagione)
     }
 }

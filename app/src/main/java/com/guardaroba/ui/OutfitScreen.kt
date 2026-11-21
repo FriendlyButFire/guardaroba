@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +44,10 @@ import com.guardaroba.motore.Stagione
 fun OutfitScreen(vm: OutfitViewModel) {
     val stato = vm.stato
     val preferiti by vm.outfitPreferiti.collectAsStateWithLifecycle()
+    val filtro = vm.filtroStagione
+    vm.avvisoFuoriStagione?.let { stagione ->
+        if (filtro != null) AvvisoFuoriStagione(stagione, filtro, vm::chiudiAvviso)
+    }
     // heightIn: il contenuto corto resta centrato, quello lungo (Colori consigliati) scorre.
     BoxWithConstraints(Modifier.fillMaxSize()) {
         Column(
@@ -130,6 +135,27 @@ private fun mancano(categorie: List<Categoria>, partenza: Categoria?, conFiltro:
     return (if (categorie.size == 1) "Ti manca: " else "Ti mancano: ") + categorie.joinToString(", ") { it.nome } + "." +
         (if (intero) "\nAl posto di Sopra e Sotto va bene anche un Intero." else "") +
         "\nAggiungi i Capi che mancano nel Guardaroba" + (if (conFiltro) " o cambia filtro Stagione." else ".")
+}
+
+/** ADR-0008: il Capo di partenza con [stagione] resta nelle Proposte anche se il [filtro] non lo ammette; gli altri Capi seguono il filtro. */
+@Composable
+private fun AvvisoFuoriStagione(stagione: Stagione, filtro: Stagione, onOk: () -> Unit) {
+    val capi = when (filtro) {
+        Stagione.ESTIVO -> "capi estivi"
+        Stagione.INVERNALE -> "capi invernali"
+        Stagione.MEZZA_STAGIONE -> "capi di mezza stagione"
+        Stagione.TUTTO_L_ANNO -> "capi per tutto l'anno"
+    }
+    AlertDialog(
+        onDismissRequest = onOk,
+        text = {
+            Text(
+                "Hai scelto un capo fuori stagione (${stagione.nome}) con il filtro " +
+                    "${filtro.nome.replaceFirstChar { it.uppercase() }}: ti propongo comunque abbinamenti con $capi.",
+            )
+        },
+        confirmButton = { TextButton(onClick = onOk) { Text("Ok") } },
+    )
 }
 
 @Composable
