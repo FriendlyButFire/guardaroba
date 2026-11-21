@@ -237,11 +237,13 @@ elif confirm "Colleghi il telefono via USB con il Debug USB attivo?"; then
   step "Collega il telefono al PC con un cavo USB dati."
   step "Sul telefono compare «Consentire il debug USB?»: spunta «Consenti sempre da questo computer» e tocca Consenti."
   step "Se il telefono chiede la modalità USB, scegli «Trasferimento file»."
-  until [[ "$(adb_ devices | tr -d '\r')" == *$'\tdevice'* ]]; do
+  # Un emulatore acceso renderebbe ambigui i comandi adb: si fissa il telefono vero con ANDROID_SERIAL.
+  until ANDROID_SERIAL=$(adb_ devices | tr -d '\r' | awk '$2 == "device" && $1 !~ /^emulator-/ { print $1; exit }'); [[ -n "$ANDROID_SERIAL" ]]; do
     warn "adb non vede ancora un telefono autorizzato. Uscita di «adb devices»:"
     adb_ devices | sed 's/^/    /'
     pause "Controlla cavo e richiesta di autorizzazione, poi premi Invio per riprovare"
   done
+  export ANDROID_SERIAL
   say "${GREEN}✓${RESET} Telefono collegato: $(adb_ shell getprop ro.product.model | tr -d '\r') (Android $(adb_ shell getprop ro.build.version.release | tr -d '\r'))"
 else
   USB=0
