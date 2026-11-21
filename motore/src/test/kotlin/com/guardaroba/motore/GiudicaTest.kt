@@ -39,6 +39,18 @@ class GiudicaTest {
     }
 
     @Test
+    fun `Capospalla e Accessori sono opzionali, e gli Accessori possono essere più di uno`() {
+        val outfit = Outfit(
+            listOf(
+                capo(Categoria.INTERO, "nero"), capo(Categoria.CAPOSPALLA, "cammello"), capo(Categoria.SCARPE, "nero"),
+                capo(Categoria.ACCESSORI, "rosso"), capo(Categoria.ACCESSORI, "giallo"),
+            ),
+        )
+
+        assertEquals(Giudizio.Valido("nero + cammello: neutri"), giudica(outfit))
+    }
+
+    @Test
     fun `un Capo passato a un'altra Categoria può lasciare l'Outfit incompleto, doppio o con Categorie escluse`() {
         val sopra = capo(Categoria.SOPRA, "bianco")
         val sotto = capo(Categoria.SOTTO, "denim")

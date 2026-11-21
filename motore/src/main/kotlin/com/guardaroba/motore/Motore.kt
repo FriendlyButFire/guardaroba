@@ -79,21 +79,21 @@ private fun mancanti(presenti: Set<Categoria>): List<Categoria> =
     listOf(Categoria.SOPRA, Categoria.SOTTO).filterNot { Categoria.INTERO in presenti || it in presenti } +
         listOf(Categoria.SCARPE).filterNot { it in presenti }
 
-/** Il giudizio del Motore su un Outfit: valido con la sua Spiegazione, o non valido con il motivo. */
+/** Il giudizio del Motore su un Outfit: valido con la sua Spiegazione, o non valido con la ragione. */
 sealed interface Giudizio {
     data class Valido(val spiegazione: String) : Giudizio
-    data class NonValido(val motivo: String) : Giudizio
+    data class NonValido(val ragione: String) : Giudizio
 }
 
 /**
- * Giudica un Outfit qualsiasi, anche uno non fatto da [proponi] (un Preferito con Capi modificati): una sola Categoria
- * per Capo, nessuna Categoria esclusa, quelle obbligatorie presenti, poi Motivi e Colori. Gli Accessori non contano
+ * Giudica un Outfit qualsiasi, anche uno non fatto da [proponi] (un Preferito con Capi modificati): al massimo un Capo
+ * per Categoria (Accessori esclusi), nessuna Categoria esclusa, quelle obbligatorie presenti, poi Motivi e Colori. Gli Accessori non contano
  * per Motivi e Colori (ADR-0004). I Colori si elencano in ordine di Categoria.
  */
 fun giudica(outfit: Outfit): Giudizio {
     val capi = outfit.capi.sortedBy { it.categoria }
     val categorie = capi.groupingBy { it.categoria }.eachCount()
-    categorie.entries.find { it.value > 1 }?.let { return Giudizio.NonValido("più di un Capo ${it.key.nome}") }
+    categorie.entries.find { it.key != Categoria.ACCESSORI && it.value > 1 }?.let { return Giudizio.NonValido("più di un Capo ${it.key.nome}") }
     capi.firstNotNullOfOrNull { c -> c.categoria.escluse.find { it in categorie }?.let { c.categoria to it } }
         ?.let { (a, b) -> return Giudizio.NonValido("${a.nome} e ${b.nome} insieme") }
     mancanti(categorie.keys).takeIf { it.isNotEmpty() }

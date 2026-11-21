@@ -95,7 +95,7 @@ private fun SchedaPreferito(preferito: PreferitoConCapi, onRinomina: () -> Unit,
             when (val giudizio = preferito.giudizio()) {
                 is Giudizio.Valido -> Text(giudizio.spiegazione, Modifier.padding(8.dp), style = MaterialTheme.typography.bodyLarge)
                 is Giudizio.NonValido -> Text(
-                    "Non più valido: ${giudizio.motivo}",
+                    "Non più valido: ${giudizio.ragione}",
                     Modifier.padding(8.dp),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.error,
