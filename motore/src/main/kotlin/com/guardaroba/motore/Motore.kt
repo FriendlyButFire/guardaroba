@@ -44,13 +44,9 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
     val perCategoria = guardaroba.filter { it.id != partenza?.id && (filtro == null || filtro.ammette(it.stagione)) }
         .groupBy { it.categoria }.toMutableMap()
     if (partenza != null) {
-        // Il Capo di partenza è l'unico della sua Categoria; con un Sopra o un Sotto non entra l'Intero, e viceversa.
+        // Il Capo di partenza è l'unico della sua Categoria, e le Categorie che esclude non entrano.
         perCategoria[partenza.categoria] = listOf(partenza)
-        when (partenza.categoria) {
-            Categoria.SOPRA, Categoria.SOTTO -> perCategoria.remove(Categoria.INTERO)
-            Categoria.INTERO -> { perCategoria.remove(Categoria.SOPRA); perCategoria.remove(Categoria.SOTTO) }
-            else -> {}
-        }
+        partenza.categoria.escluse.forEach(perCategoria::remove)
     }
     fun capi(categoria: Categoria) = perCategoria[categoria].orEmpty()
     // Sopra e Sotto mancano solo se manca anche l'alternativa, l'Intero.
@@ -58,7 +54,7 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
     val mancanti = listOf(Categoria.SOPRA, Categoria.SOTTO).filterNot { haIntero || it in perCategoria } +
         listOf(Categoria.SCARPE).filterNot { it in perCategoria }
     if (mancanti.isNotEmpty()) return Esito.MancaCategoria(mancanti)
-    // shortcut: enumerazione completa delle combinazioni, adeguata fino a qualche centinaio di Capi (spec).
+    // shortcut: enumerazione completa degli Outfit possibili, adeguata fino a qualche centinaio di Capi (spec).
     val basi = capi(Categoria.SOPRA).flatMap { sopra -> capi(Categoria.SOTTO).map { sotto -> listOf(sopra, sotto) } } +
         capi(Categoria.INTERO).map { intero -> listOf(intero) }
     fun proposte(candidati: List<Outfit>) = candidati.mapNotNull { o -> spiegazione(o)?.let { Esito.Proposta(o, it) } }

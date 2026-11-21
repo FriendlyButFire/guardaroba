@@ -21,4 +21,12 @@ class CategoriaTest {
         assertEquals(listOf("sneakers", "eleganti", "stivali", "sandali"), Categoria.SCARPE.tipi)
         assertEquals(listOf("cintura", "borsa", "cappello", "sciarpa"), Categoria.ACCESSORI.tipi)
     }
+
+    @Test
+    fun `Sopra e Sotto escludono l'Intero, e l'Intero esclude Sopra e Sotto`() {
+        assertEquals(setOf(Categoria.INTERO), Categoria.SOPRA.escluse)
+        assertEquals(setOf(Categoria.INTERO), Categoria.SOTTO.escluse)
+        assertEquals(setOf(Categoria.SOPRA, Categoria.SOTTO), Categoria.INTERO.escluse)
+        assertEquals(emptySet<Categoria>(), Categoria.SCARPE.escluse)
+    }
 }
