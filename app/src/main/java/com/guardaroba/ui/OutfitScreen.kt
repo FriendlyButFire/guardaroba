@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.guardaroba.archivio.Capo
 import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Consiglio
 import com.guardaroba.motore.Esito
@@ -45,26 +46,39 @@ fun OutfitScreen(vm: OutfitViewModel) {
     val stato = vm.stato
     val preferiti by vm.outfitPreferiti.collectAsStateWithLifecycle()
     vm.avvisoFuoriStagione?.let { AvvisoFuoriStagione(it, vm::chiudiAvviso) }
-    // heightIn: il contenuto corto resta centrato, quello lungo (Colori consigliati) scorre.
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        Column(
-            Modifier.verticalScroll(rememberScrollState()).heightIn(min = maxHeight).fillMaxWidth().padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+    // In alto i comandi che cambiano la Richiesta, in basso l'azione principale sempre nello stesso posto: scorre solo il contenuto.
+    Column(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             vm.partenza?.let { id ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("Parti da: " + (stato?.capi?.get(id)?.tipo ?: "…"), style = MaterialTheme.typography.titleSmall)
                     TextButton(onClick = { vm.partiDa(null) }) { Text("Genera a caso") }
                 }
             }
+            // "tutto l'anno" entra già in ogni filtro, quindi non è una voce. Vale dalla prossima Proposta.
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                (listOf(null) + (Stagione.entries - Stagione.TUTTO_L_ANNO)).forEach {
+                    FilterChip(
+                        selected = it == vm.filtroStagione,
+                        onClick = { vm.scegliStagione(it) },
+                        label = { Text(it?.nome ?: "nessuno") },
+                    )
+                }
+            }
+        }
+        Column(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             when (val esito = stato?.esito) {
                 null -> Messaggio("Premi Genera per ricevere un Outfit fatto con i tuoi Capi.")
                 is Esito.Proposta -> {
-                    Row(Modifier.fillMaxWidth()) {
-                        // mapNotNull: un Capo eliminato dopo la Proposta sparisce dalla miniatura
-                        esito.outfit.capi.mapNotNull { stato.capi[it.id] }.forEach { RiquadroCapo(it, Modifier.weight(1f)) }
-                    }
+                    // mapNotNull: un Capo eliminato dopo la Proposta sparisce dalla miniatura
+                    OutfitVerticale(esito.outfit.capi.mapNotNull { stato.capi[it.id] })
                     Text(esito.spiegazione, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
                     // Una Proposta nuova riparte con il nome vuoto.
                     var nome by rememberSaveable(esito.outfit.idCapi) { mutableStateOf("") }
@@ -84,23 +98,24 @@ fun OutfitScreen(vm: OutfitViewModel) {
                 Esito.Esaurite -> Messaggio("Hai visto tutte le Proposte possibili.\nPremi Ricomincia per rivederle.")
             }
             stato?.consigliati?.takeIf { it.isNotEmpty() }?.let { ColoriConsigliati(it) }
-            // "tutto l'anno" entra già in ogni filtro, quindi non è una voce. Vale dalla prossima Proposta.
-            Text("Filtro Stagione", style = MaterialTheme.typography.labelLarge)
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                (listOf(null) + (Stagione.entries - Stagione.TUTTO_L_ANNO)).forEach {
-                    FilterChip(
-                        selected = it == vm.filtroStagione,
-                        onClick = { vm.scegliStagione(it) },
-                        label = { Text(it?.nome ?: "nessuno") },
-                    )
-                }
-            }
-            if (stato?.esito == Esito.Esaurite) {
-                Button(onClick = vm::ricomincia) { Text("Ricomincia") }
-            } else {
-                Button(onClick = vm::genera) { Text(if (stato?.esito is Esito.Proposta) "Un altro" else "Genera") }
-            }
         }
+        val azione = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).heightIn(min = 56.dp)
+        if (stato?.esito == Esito.Esaurite) {
+            Button(onClick = vm::ricomincia, modifier = azione) { Text("Ricomincia") }
+        } else {
+            Button(onClick = vm::genera, modifier = azione) { Text(if (stato?.esito is Esito.Proposta) "Un altro" else "Genera") }
+        }
+    }
+}
+
+/** L'Outfit in piedi come un corpo: Sopra, Sotto (o Intero) e Scarpe in colonna; Capospalla e Accessori accanto, dall'altezza delle spalle. */
+@Composable
+private fun OutfitVerticale(capi: List<Capo>) {
+    val (accanto, corpo) = capi.sortedBy { it.categoria }
+        .partition { it.categoria == Categoria.CAPOSPALLA || it.categoria == Categoria.ACCESSORI }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column { corpo.forEach { RiquadroCapo(it, Modifier.width(144.dp)) } }
+        if (accanto.isNotEmpty()) Column { accanto.forEach { RiquadroCapo(it, Modifier.width(96.dp)) } }
     }
 }
 
