@@ -205,10 +205,13 @@ run_wizard() {
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APK="$REPO/app/build/outputs/apk/debug/app-debug.apk"
 PACCHETTO="com.guardaroba"
-# Git Bash non sempre esporta LOCALAPPDATA: ricavalo dalla home.
-SDK="${LOCALAPPDATA:-$HOME/AppData/Local}/Android/Sdk"
-ADB="${ADB:-$SDK/platform-tools/adb.exe}"
-[[ -x "$ADB" ]] || ADB="adb"
+# Git Bash non sempre esporta LOCALAPPDATA o una HOME di Windows: prova i posti soliti dell'SDK.
+SDK=""
+for s in "${ANDROID_HOME:-}" "${LOCALAPPDATA:+$(cygpath -u "$LOCALAPPDATA")/Android/Sdk}"          "${USERPROFILE:+$(cygpath -u "$USERPROFILE")/AppData/Local/Android/Sdk}"          "/c/Users/${USERNAME:-$(whoami)}/AppData/Local/Android/Sdk"; do
+  [[ -n "$s" && -x "$s/platform-tools/adb.exe" ]] && { SDK="$s"; break; }
+done
+ADB="${ADB:-${SDK:+$SDK/platform-tools/adb.exe}}"
+[[ -n "$ADB" ]] || ADB="$(command -v adb || true)"
 adb_() { MSYS_NO_PATHCONV=1 "$ADB" "$@"; }
 
 TOTAL_STAGES=7
@@ -225,8 +228,9 @@ pause "Fatto? Premi Invio"
 
 stage "Collega il telefono"
 USB=1
-if ! command -v "$ADB" >/dev/null 2>&1; then
-  warn "adb non trovato: installa Android Studio (o le platform-tools), oppure usa il sideload al passo 4."
+if [[ -z "$ADB" ]] || ! command -v "$ADB" >/dev/null 2>&1; then
+  warn "adb non trovato (cercato in ANDROID_HOME, LOCALAPPDATA, USERPROFILE e /c/Users/<utente>/AppData/Local/Android/Sdk)."
+  note "Se ce l'hai altrove, rilancia con: ADB=/percorso/adb.exe bash scripts/installa-sul-telefono.sh — oppure usa il sideload al passo 4."
   USB=0
 elif confirm "Colleghi il telefono via USB con il Debug USB attivo?"; then
   step "Collega il telefono al PC con un cavo USB dati."
