@@ -212,6 +212,7 @@ for s in "${ANDROID_HOME:-}" "${LOCALAPPDATA:+$(cygpath -u "$LOCALAPPDATA")/Andr
 done
 ADB="${ADB:-${SDK:+$SDK/platform-tools/adb.exe}}"
 [[ -n "$ADB" ]] || ADB="$(command -v adb || true)"
+# adb.exe è un programma Windows: vuole percorsi Windows, e quello corto (8.3) evita la «Π».
 adb_() { MSYS_NO_PATHCONV=1 "$ADB" "$@"; }
 
 TOTAL_STAGES=7
@@ -275,7 +276,7 @@ pause
 
 stage "Installa l'app"
 if (( USB )) && confirm "Installo Guardaroba sul telefono con adb?"; then
-  if ! adb_ install -r "$APK"; then
+  if ! adb_ install -r "$(cygpath -d "$APK")"; then
     warn "Installazione fallita. Con INSTALL_FAILED_UPDATE_INCOMPATIBLE c'è già un'app firmata diversamente:"
     note "esporta i dati dall'app (Impostazioni → Esporta), poi: adb uninstall $PACCHETTO, e rilancia il wizard."
     exit 1
@@ -284,7 +285,7 @@ if (( USB )) && confirm "Installo Guardaroba sul telefono con adb?"; then
 else
   USB=0
   say "Installazione senza adb (sideload):"
-  step "Copia $APK sul telefono (cavo in modalità Trasferimento file, oppure Drive/email a te stesso)."
+  step "Copia $(cygpath -w "$APK") sul telefono (cavo in modalità Trasferimento file, oppure Drive/email a te stesso)."
   step "Sul telefono apri il file con l'app File e tocca Installa."
   step "Se chiede il permesso «Installa app sconosciute» per quell'app, concedilo e riprova."
 fi
@@ -336,7 +337,7 @@ if (( RIUSCITO )); then
   note "Se qualcosa va storto hai lo ZIP: Impostazioni → Importa."
   if confirm "Disinstallo e reinstallo Guardaroba adesso?"; then
     adb_ uninstall "$PACCHETTO"
-    adb_ install "$APK"
+    adb_ install "$(cygpath -d "$APK")"
     adb_ shell monkey -p "$PACCHETTO" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
     step "Controlla che Guardaroba, Preferiti e foto siano tornati."
     note "Le foto scattate e non salvate (cache) non tornano: è voluto (ADR-0003)."
