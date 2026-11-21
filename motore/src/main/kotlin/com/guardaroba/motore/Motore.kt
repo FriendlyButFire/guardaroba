@@ -9,6 +9,7 @@ data class Capo(
     val colorePrincipale: Colore,
     val motivo: Motivo = Motivo.TINTA_UNITA,
     val coloreSecondario: Colore? = null,
+    val stagione: Stagione = Stagione.TUTTO_L_ANNO,
 )
 
 /** Un insieme di Capi indossabili insieme; si identifica con l'insieme degli id dei suoi Capi. */
@@ -17,7 +18,8 @@ data class Outfit(val capi: List<Capo>) {
 }
 
 sealed interface Richiesta {
-    data object Genera : Richiesta
+    /** [filtroStagione] null = nessun filtro, entrano tutti i Capi. */
+    data class Genera(val filtroStagione: Stagione? = null) : Richiesta
 }
 
 sealed interface Esito {
@@ -32,7 +34,8 @@ sealed interface Esito {
  * (insiemi di id dei Capi, vedi [Outfit.idCapi]). [caso] è iniettabile per avere test deterministici.
  */
 fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Long>>, caso: Random = Random.Default): Esito {
-    val perCategoria = guardaroba.groupBy { it.categoria }
+    val filtro = when (richiesta) { is Richiesta.Genera -> richiesta.filtroStagione }
+    val perCategoria = guardaroba.filter { filtro == null || filtro.ammette(it.stagione) }.groupBy { it.categoria }
     fun capi(categoria: Categoria) = perCategoria[categoria].orEmpty()
     // Sopra e Sotto mancano solo se manca anche l'alternativa, l'Intero.
     val haIntero = Categoria.INTERO in perCategoria
@@ -42,9 +45,14 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
     // shortcut: enumerazione completa delle combinazioni, adeguata fino a qualche centinaio di Capi (spec).
     val basi = capi(Categoria.SOPRA).flatMap { sopra -> capi(Categoria.SOTTO).map { sotto -> listOf(sopra, sotto) } } +
         capi(Categoria.INTERO).map { intero -> listOf(intero) }
+    fun proposte(candidati: List<Outfit>) = candidati.mapNotNull { o -> spiegazione(o)?.let { Esito.Proposta(o, it) } }
+    // Con invernale o mezza stagione ogni Capospalla compatibile dà una Proposta; senza nessuno, l'Outfit resta senza.
+    val capospalla = if (filtro == Stagione.INVERNALE || filtro == Stagione.MEZZA_STAGIONE) capi(Categoria.CAPOSPALLA) else emptyList()
     val valide = basi.flatMap { base ->
-        capi(Categoria.SCARPE).map { scarpe -> Outfit(base + scarpe) }
-    }.mapNotNull { outfit -> spiegazione(outfit)?.let { Esito.Proposta(outfit, it) } }
+        capi(Categoria.SCARPE).flatMap { scarpe ->
+            proposte(capospalla.map { Outfit(base + it + scarpe) }).ifEmpty { proposte(listOf(Outfit(base + scarpe))) }
+        }
+    }
     if (valide.isEmpty()) return Esito.NessunAbbinamento
     return valide.filter { it.outfit.idCapi !in giàViste }.randomOrNull(caso) ?: Esito.Esaurite
 }
