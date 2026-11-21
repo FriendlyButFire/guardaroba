@@ -37,11 +37,11 @@ fun BackupSezione() {
         when (s.livello) {
             LivelloBackup.OK -> Text("Guardaroba, Preferiti e foto sono inclusi nel backup di Android.")
             LivelloBackup.AVVISO -> Text(
-                "Il backup ha superato l'80% del limite. Elimina qualche foto o esporta il Guardaroba in ZIP.",
+                "Il backup ha superato l'${StatoBackup.SOGLIA_AVVISO * 100 / StatoBackup.LIMITE}% del limite. Elimina qualche foto o esporta il Guardaroba in ZIP.",
                 color = MaterialTheme.colorScheme.error,
             )
             LivelloBackup.FERMO -> Text(
-                "Limite di 25 MB raggiunto: il backup automatico è fermo e i nuovi dati non vengono salvati. " +
+                "Limite di ${mb(StatoBackup.LIMITE)} MB raggiunto: il backup automatico è fermo e i nuovi dati non vengono salvati. " +
                     "Esporta il Guardaroba in ZIP per averne una copia.",
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyLarge,

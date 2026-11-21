@@ -1,6 +1,8 @@
 package com.guardaroba.archivio
 
 import android.content.Context
+import com.guardaroba.R
+import org.xmlpull.v1.XmlPullParser
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
@@ -41,5 +43,31 @@ class BackupTest {
         assertEquals(LivelloBackup.AVVISO, StatoBackup(20 * mb, 0).livello)
         assertEquals(LivelloBackup.AVVISO, StatoBackup(25 * mb - 1, 0).livello)
         assertEquals(LivelloBackup.FERMO, StatoBackup(25 * mb, 0).livello)
+    }
+
+    /** Le coppie (sezione, domain, path) degli `<include>` di una regola di backup in `res/xml`. */
+    private fun inclusi(xml: Int): List<Triple<String, String, String>> {
+        val parser = context.resources.getXml(xml)
+        val inclusi = mutableListOf<Triple<String, String, String>>()
+        var sezione = ""
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType != XmlPullParser.START_TAG) continue
+            if (parser.name == "include") {
+                inclusi += Triple(sezione, parser.getAttributeValue(null, "domain"), parser.getAttributeValue(null, "path"))
+            } else {
+                sezione = parser.name
+            }
+        }
+        return inclusi
+    }
+
+    @Test
+    fun `le regole di backup includono solo database e foto, nei due formati`() {
+        val attesi = listOf("database" to ".", "file" to "${Foto.CARTELLA}/")
+        assertEquals(attesi.map { Triple("full-backup-content", it.first, it.second) }, inclusi(R.xml.backup_regole))
+        assertEquals(
+            listOf("cloud-backup", "device-transfer").flatMap { s -> attesi.map { Triple(s, it.first, it.second) } },
+            inclusi(R.xml.backup_estrazione),
+        )
     }
 }
