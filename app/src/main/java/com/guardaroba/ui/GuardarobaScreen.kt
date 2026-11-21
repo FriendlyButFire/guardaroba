@@ -12,6 +12,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -265,7 +269,15 @@ private fun PuntoColore(colore: Colore) {
 private fun PannelloFiltri(filtro: Filtro, quanti: Int, onCambia: (Filtro) -> Unit, onChiudi: () -> Unit) {
     val stato = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
-    ModalBottomSheet(onDismissRequest = onChiudi, sheetState = stato) {
+    // shortcut: Material3 1.4.0 pads the sheet content by the status-bar inset minus the sheet offset, so the sheet's height
+    // follows its own position: a fast fling up overshoots under the status bar, the Expanded anchor moves, the settle
+    // restarts, and the sheet bounces forever. The sheet stops below the status bar instead (consumed here, so the content
+    // padding no longer depends on the offset); re-check without this when upgrading Material3.
+    ModalBottomSheet(
+        onDismissRequest = onChiudi,
+        sheetState = stato,
+        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)),
+    ) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
