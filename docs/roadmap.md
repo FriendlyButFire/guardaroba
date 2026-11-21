@@ -1,6 +1,6 @@
 # Roadmap
 
-Aggiornata il **2026-11-21**. Fase attuale: **design con Impeccable**: Outfit e Guardaroba sistemate; prossime Preferiti e Impostazioni.
+Aggiornata il **2026-11-21**. Fase attuale: **design con Impeccable**: Outfit e Guardaroba sistemate; Preferiti in corso, poi Impostazioni.
 
 Riferimenti: [[spec]] · [[GLOSSARY]] · [[PRODUCT]] · storico completo: `git log --oneline` (116 commit, branch `guardaroba-v1`, non ancora su `master`).
 
@@ -29,7 +29,7 @@ flowchart LR
   - [x] [[PRODUCT]] scritto (`/impeccable init`)
   - [x] Outfit: critica 24/40 → 5 modifiche fatte ([[0012-schermata-outfit-ridisegnata]]); da ricriticare per il nuovo punteggio
   - [x] Guardaroba e scheda Capo: critica 22/40 → 5 modifiche fatte ([[0013-guardaroba-e-scheda-capo-ridisegnati]]): pulsante Filtri, scheda corta con barra ✕/Salva, conferma "Scartare le modifiche?", "Salva e aggiungi un altro", "Duplica", riga "Manca: …"; da ricriticare
-  - [ ] Preferiti
+  - [ ] Preferiti: critica 23/40 → 5 modifiche in corso (apertura in grande, "Non più valido" con rimedio, contrasto sul giallo, Spiegazione in frase, snackbar con Annulla)
   - [ ] Impostazioni
 - [ ] **Retro**: problemi ricorrenti → regole nel CLAUDE.md
 - [ ] **Merge su `master`** e push: solo su tua richiesta
@@ -55,7 +55,7 @@ flowchart LR
 |---|---|---|
 | Outfit | 24/40 | da ricriticare |
 | Guardaroba e scheda Capo | 22/40 | da ricriticare |
-| Preferiti | — | — |
+| Preferiti | 23/40 | in corso |
 | Impostazioni | — | — |
 
 Le critiche complete sono in `.impeccable/critique/`.
