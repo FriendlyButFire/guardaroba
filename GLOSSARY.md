@@ -69,7 +69,7 @@ Un Outfit suggerito dall'app, accompagnato dalla sua Spiegazione.
 _Avoid_: Suggerimento, risultato
 
 **Spiegazione**:
-La motivazione cromatica di una Proposta o di un Preferito, espressa con le regole di abbinamento applicate (es. "complementari"). Per un Preferito si rifà con i Capi di adesso (ADR-0011).
+La motivazione cromatica di una Proposta o di un Preferito, espressa con le regole di abbinamento applicate (es. "complementari"). In Outfit diventa una frase in italiano semplice sul perché funziona, con la regola come etichetta (ADR-0012). Per un Preferito si rifà con i Capi di adesso (ADR-0011).
 
 **Preferito**:
 Un Outfit salvato dall'utente. Se un suo Capo cambia e l'Outfit non è più valido, resta tra i Preferiti segnalato come "Non più valido" con la ragione (ADR-0011).
