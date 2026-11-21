@@ -42,7 +42,7 @@ import com.guardaroba.motore.Stagione
 @Composable
 fun OutfitScreen(vm: OutfitViewModel) {
     val stato = vm.stato
-    val salvati by vm.salvati.collectAsStateWithLifecycle()
+    val preferiti by vm.outfitPreferiti.collectAsStateWithLifecycle()
     // heightIn: il contenuto corto resta centrato, quello lungo (Colori consigliati) scorre.
     BoxWithConstraints(Modifier.fillMaxSize()) {
         Column(
@@ -66,12 +66,12 @@ fun OutfitScreen(vm: OutfitViewModel) {
                     Text(esito.spiegazione, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
                     // Una Proposta nuova riparte con il nome vuoto.
                     var nome by rememberSaveable(esito.outfit.idCapi) { mutableStateOf("") }
-                    val salvata = esito.outfit.idCapi in salvati
-                    if (!salvata) {
+                    val traIPreferiti = esito.outfit.idCapi in preferiti
+                    if (!traIPreferiti) {
                         OutlinedTextField(nome, { nome = it }, label = { Text("Nome (opzionale)") }, singleLine = true)
                     }
-                    OutlinedButton(onClick = { vm.salva(nome) }, enabled = !salvata) {
-                        Text(if (salvata) "Tra i Preferiti" else "Salva")
+                    OutlinedButton(onClick = { vm.salva(nome) }, enabled = !traIPreferiti) {
+                        Text(if (traIPreferiti) "Tra i Preferiti" else "Salva")
                     }
                 }
                 is Esito.MancaCategoria ->
@@ -124,9 +124,9 @@ private fun ColoriConsigliati(consigliati: List<Consiglio>) {
     }
 }
 
-/** Il messaggio di MancaCategoria; l'Intero è un'alternativa solo se il Capo di partenza ([partenza]) non è un Sopra o un Sotto (ADR-0008). */
+/** Il messaggio di MancaCategoria; l'Intero è un'alternativa solo se il Capo di partenza ([partenza]) non lo esclude (ADR-0008). */
 private fun mancano(categorie: List<Categoria>, partenza: Categoria?, conFiltro: Boolean): String {
-    val intero = (Categoria.SOPRA in categorie || Categoria.SOTTO in categorie) && partenza != Categoria.SOPRA && partenza != Categoria.SOTTO
+    val intero = (Categoria.SOPRA in categorie || Categoria.SOTTO in categorie) && Categoria.INTERO !in partenza?.escluse.orEmpty()
     return (if (categorie.size == 1) "Ti manca: " else "Ti mancano: ") + categorie.joinToString(", ") { it.nome } + "." +
         (if (intero) "\nAl posto di Sopra e Sotto va bene anche un Intero." else "") +
         "\nAggiungi i Capi che mancano nel Guardaroba" + (if (conFiltro) " o cambia filtro Stagione." else ".")

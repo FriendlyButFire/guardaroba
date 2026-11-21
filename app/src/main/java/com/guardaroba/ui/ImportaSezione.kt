@@ -13,9 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-/** "Importa" in Impostazioni: sceglie uno ZIP di «Esporta» (SAF) e, dopo una conferma, sostituisce il Guardaroba. */
+/** "Importa" in Impostazioni: sceglie uno ZIP di «Esporta» (SAF) e, dopo una conferma, sostituisce il Guardaroba; poi chiama [onImportato]. */
 @Composable
-fun ImportaSezione(vm: ImportaViewModel = viewModel(factory = ImportaViewModel.Factory)) {
+fun ImportaSezione(onImportato: () -> Unit, vm: ImportaViewModel = viewModel(factory = ImportaViewModel.Factory)) {
     // Alcuni file manager danno agli ZIP un tipo diverso da application/zip: un file sbagliato lo ferma la validazione.
     val selettore = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let(vm::scelto)
@@ -36,7 +36,7 @@ fun ImportaSezione(vm: ImportaViewModel = viewModel(factory = ImportaViewModel.F
             onDismissRequest = vm::annulla,
             title = { Text("Sostituire il Guardaroba?") },
             text = { Text("Tutti i Capi, i Preferiti e le foto di adesso verranno sostituiti da quelli del file. Non si può annullare.") },
-            confirmButton = { TextButton(onClick = vm::conferma) { Text("Sostituisci") } },
+            confirmButton = { TextButton(onClick = { vm.conferma(onImportato) }) { Text("Sostituisci") } },
             dismissButton = { TextButton(onClick = vm::annulla) { Text("Annulla") } },
         )
     }

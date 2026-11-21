@@ -66,7 +66,7 @@ class OutfitViewModelTest {
         runBlocking { db.capoDao().salva(capi[3].copy(colorePrincipale = "nero")) } // l'Accessorio: Genera non lo usa mai
         repeat(20) { shadowOf(Looper.getMainLooper()).idle(); Thread.sleep(10) }
 
-        assertTrue(vm.stato === prima)
+        assertTrue(vm.stato?.esito === prima?.esito)
     }
 
     @Test
@@ -81,5 +81,60 @@ class OutfitViewModelTest {
         runBlocking { db.capoDao().eliminaConPreferiti(capi[0].id) }
         aspetta { vm.partenza == null }
         assertNull(vm.stato)
+    }
+
+    @Test
+    fun `dopo Esaurite, cambiare un Capo già visto ridà una Proposta`() {
+        vm.genera()
+        aspetta { vm.stato?.esito is Esito.Proposta }
+        vm.genera()
+        aspetta { vm.stato?.esito == Esito.Esaurite }
+
+        runBlocking { db.capoDao().salva(capi[1].copy(colorePrincipale = "beige")) }
+        repeat(20) { shadowOf(Looper.getMainLooper()).idle(); Thread.sleep(10) }
+        vm.genera()
+
+        aspetta { (vm.stato?.esito as? Esito.Proposta)?.spiegazione?.contains("beige") == true }
+    }
+
+    @Test
+    fun `tornare a Genera, come dopo un Importa, azzera Partenza, Proposta e già viste`() {
+        vm.partiDa(capi[0].id)
+        aspetta { vm.stato?.esito is Esito.Proposta }
+        vm.genera()
+        aspetta { vm.stato?.esito == Esito.Esaurite }
+
+        vm.partiDa(null)
+        assertNull(vm.partenza)
+        assertNull(vm.stato)
+        vm.genera()
+
+        aspetta { vm.stato?.esito is Esito.Proposta }
+    }
+
+    @Test
+    fun `cambiare foto, Tipo o Taglia di un Capo della Proposta la lascia valida, con la foto nuova`() {
+        vm.genera()
+        aspetta { vm.stato?.esito is Esito.Proposta }
+        val prima = vm.stato!!.esito
+
+        runBlocking { db.capoDao().salva(capi[0].copy(percorsoFoto = "nuova.webp", tipo = "polo", taglia = "M")) }
+
+        aspetta { vm.stato?.capi?.get(capi[0].id)?.percorsoFoto == "nuova.webp" }
+        assertEquals(prima, vm.stato!!.esito)
+    }
+
+    @Test
+    fun `cambiare il Colore del Capo di partenza aggiorna i Colori consigliati anche se non c'è una Proposta`() {
+        vm.partiDa(capi[0].id)
+        aspetta { vm.stato?.esito is Esito.Proposta }
+        vm.genera()
+        aspetta { vm.stato?.esito == Esito.Esaurite }
+        assertTrue(vm.stato!!.consigliati.any { it.colore.id == "rosso" })
+
+        runBlocking { db.capoDao().salva(capi[0].copy(colorePrincipale = "rosso")) }
+
+        aspetta { vm.stato?.consigliati?.none { it.colore.id == "rosso" } == true }
+        assertTrue(vm.stato!!.consigliati.any { it.colore.id == "bianco" })
     }
 }

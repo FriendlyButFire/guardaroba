@@ -42,32 +42,41 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         private set
 
     /** Gli Outfit tra i Preferiti, come insiemi di id dei Capi: segue anche le eliminazioni dalla lista. */
-    val salvati = preferiti.tutti()
+    val outfitPreferiti = preferiti.tutti()
         .map { lista -> lista.map { p -> p.capi.map { it.id }.toSet() }.toSet() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     /** Gli Outfit già proposti in questa sessione, come insiemi di id dei Capi. */
     private val giàViste = mutableSetOf<Set<Long>>()
 
+    /** Il Guardaroba dell'ultimo aggiornamento, come lo vede il Motore: dice quali Capi sono cambiati. */
+    private var ultimi = emptyMap<Long, CapoMotore>()
+
     init {
-        // ADR-0010: se un Capo della Proposta mostrata cambia o sparisce, la Proposta (e la sua Spiegazione) non vale più.
+        // ADR-0010: se un Capo della Proposta mostrata cambia (per il Motore) o sparisce, la Proposta (e la sua Spiegazione) non vale più.
         viewModelScope.launch {
             dao.tutti().collect { capi ->
                 val attuali = capi.associateBy { it.id }
-                if (partenza != null && partenza !in attuali) {
-                    partenza = null
-                    stato = null
+                val perMotore = capi.associate { it.id to it.perMotore() }
+                // Un Outfit con un Capo cambiato o sparito è un Outfit nuovo: esce dalle già viste, qualunque Esito sia mostrato.
+                val cambiati = ultimi.keys.filter { perMotore[it] != ultimi[it] }.toSet()
+                ultimi = perMotore
+                giàViste.removeAll { visto -> visto.any(cambiati::contains) }
+                val daCapo = partenza
+                if (daCapo != null && daCapo !in attuali) {
+                    partiDa(null) // il Capo di partenza è sparito: si torna a Genera
                     return@collect
                 }
                 val s = stato ?: return@collect
-                val proposta = s.esito as? Esito.Proposta ?: return@collect
-                if (proposta.outfit.idCapi.any { attuali[it] != s.capi[it] }) {
-                    // Un Outfit con un Capo cambiato è un Outfit nuovo: esce dalle già viste.
-                    val cambiati = s.capi.keys.filter { attuali[it] != s.capi[it] }.toSet()
-                    giàViste.removeAll { visto -> visto.any(cambiati::contains) }
+                val proposta = s.esito as? Esito.Proposta
+                if (proposta != null && proposta.outfit.capi.any { perMotore[it.id] != it }) {
                     stato = null
-                    if (partenza != null) genera()
+                    if (daCapo != null) genera()
+                    return@collect
                 }
+                // Il resto (foto, Tipo, Taglia, i Colori del Capo di partenza) si aggiorna senza toccare l'Esito.
+                val aggiornato = s.copy(capi = attuali, consigliati = daCapo?.let { coloriConsigliati(perMotore.getValue(it)) }.orEmpty())
+                if (aggiornato != s) stato = aggiornato
             }
         }
     }
@@ -77,8 +86,8 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         viewModelScope.launch {
             val capi = dao.tutti().first()
             val perMotore = capi.map { it.perMotore() }
+            // Se il Capo di partenza è stato eliminato nel frattempo, lo toglie da [partenza] il collector in init.
             val capoDiPartenza = perMotore.find { it.id == partenza }
-            if (capoDiPartenza == null) partenza = null // eliminato nel frattempo: si torna a Genera
             val richiesta = capoDiPartenza?.let { Richiesta.PartiDa(it, filtroStagione) } ?: Richiesta.Genera(filtroStagione)
             val esito = proponi(perMotore, richiesta, giàViste)
             if (esito is Esito.Proposta) giàViste += esito.outfit.idCapi
@@ -92,7 +101,10 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         viewModelScope.launch { preferiti.salva(proposta.spiegazione, proposta.outfit.idCapi, nome) }
     }
 
-    /** "Parti da questo capo" ([id]) o, con null, ritorno a Genera: le Proposte già viste ripartono da zero. */
+    /**
+     * "Parti da questo capo" ([id]) o, con null, ritorno a Genera: le Proposte già viste ripartono da zero.
+     * Con null serve anche dopo un Importa, che riusa gli id per Capi diversi (ADR-0010).
+     */
     fun partiDa(id: Long?) {
         partenza = id
         giàViste.clear()

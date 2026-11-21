@@ -38,8 +38,8 @@ class ImportaViewModel(private val importazione: Importazione, private val resol
         daConfermare = null
     }
 
-    /** Sostituisce il Guardaroba con il file confermato; se il file non è valido, i dati restano com'erano. */
-    fun conferma() {
+    /** Sostituisce il Guardaroba con il file confermato e poi chiama [importato]; se il file non è valido, i dati restano com'erano. */
+    fun conferma(importato: () -> Unit) {
         val uri = daConfermare ?: return
         daConfermare = null
         inCorso = true
@@ -49,6 +49,7 @@ class ImportaViewModel(private val importazione: Importazione, private val resol
                     val input = resolver.openInputStream(uri) ?: throw IOException("File non apribile")
                     input.use { importazione.importa(it) }
                 }
+                importato()
                 "Guardaroba importato."
             } catch (e: CancellationException) {
                 throw e

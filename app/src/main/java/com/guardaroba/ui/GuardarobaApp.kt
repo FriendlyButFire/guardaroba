@@ -55,7 +55,8 @@ fun GuardarobaApp() {
                 Sezione.GUARDAROBA -> GuardarobaScreen(onPartiDa = { outfit.partiDa(it.id); sezione = Sezione.OUTFIT })
                 Sezione.OUTFIT -> OutfitScreen(outfit)
                 Sezione.PREFERITI -> PreferitiScreen()
-                Sezione.IMPOSTAZIONI -> ImpostazioniScreen()
+                // Dopo un Importa gli id indicano altri Capi: la sessione Outfit riparte da zero (ADR-0010).
+                Sezione.IMPOSTAZIONI -> ImpostazioniScreen(onImportato = { outfit.partiDa(null) })
             }
         }
     }
