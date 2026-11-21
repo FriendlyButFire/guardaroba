@@ -98,15 +98,18 @@ fun giudica(outfit: Outfit): Giudizio {
         ?.let { (a, b) -> return Giudizio.NonValido("${a.nome} e ${b.nome} insieme") }
     mancanti(categorie.keys).takeIf { it.isNotEmpty() }
         ?.let { m -> return Giudizio.NonValido("manca " + m.joinToString(" e ") { it.nome }) }
-    val colorati = capi.filter { it.categoria != Categoria.ACCESSORI }
-    if (colorati.count { it.motivo != Motivo.TINTA_UNITA } > 1) return Giudizio.NonValido("più di un Capo non in tinta unita")
-    val colori = colorati.map { it.colorePrincipale }.distinct()
+    if (capi.count { it.categoria != Categoria.ACCESSORI && it.motivo != Motivo.TINTA_UNITA } > 1) return Giudizio.NonValido("più di un Capo non in tinta unita")
+    val colori = coloriPrincipali(outfit)
     val elenco = colori.joinToString(" + ") { it.nome }
     return regola(colori)?.let { Giudizio.Valido("$elenco: $it") } ?: Giudizio.NonValido("$elenco non si abbinano")
 }
 
+/** I Colori principali distinti dell'Outfit in ordine di Categoria, senza quelli degli Accessori che non vincolano (ADR-0004). */
+internal fun coloriPrincipali(outfit: Outfit): List<Colore> =
+    outfit.capi.sortedBy { it.categoria }.filter { it.categoria != Categoria.ACCESSORI }.map { it.colorePrincipale }.distinct()
+
 /** La regola che rende validi insieme questi Colori distinti, o null se non stanno insieme. */
-private fun regola(colori: List<Colore>): String? {
+internal fun regola(colori: List<Colore>): String? {
     val nonNeutri = colori.filterNot { it.neutro }
     return when (nonNeutri.size) {
         0 -> "neutri"

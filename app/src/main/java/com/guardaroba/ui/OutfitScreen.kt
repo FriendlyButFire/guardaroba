@@ -1,5 +1,6 @@
 package com.guardaroba.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -31,6 +33,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,6 +53,7 @@ import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Consiglio
 import com.guardaroba.motore.Esito
 import com.guardaroba.motore.Stagione
+import com.guardaroba.motore.perché
 
 @Composable
 fun OutfitScreen(vm: OutfitViewModel) {
@@ -59,10 +64,15 @@ fun OutfitScreen(vm: OutfitViewModel) {
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             vm.partenza?.let { id ->
-                Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Parti da: " + (stato?.capi?.get(id)?.tipo ?: "…"), style = MaterialTheme.typography.titleSmall)
-                    TextButton(onClick = { vm.partiDa(null) }) { Text("Genera a caso") }
-                }
+                // Il chip è l'uscita da "Parti da": toccarlo (o Indietro) torna alle Proposte da tutto il Guardaroba.
+                BackHandler { vm.partiDa(null) }
+                InputChip(
+                    selected = true,
+                    onClick = { vm.partiDa(null) },
+                    label = { Text("Parti da: " + (stato?.capi?.get(id)?.tipo ?: "…")) },
+                    trailingIcon = { Icon(Icons.Filled.Close, contentDescription = "Togli", Modifier.size(InputChipDefaults.IconSize)) },
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
             }
             // "tutto l'anno" entra già in ogni filtro, quindi non è una voce. Vale dalla prossima Proposta.
             Row(
@@ -73,7 +83,7 @@ fun OutfitScreen(vm: OutfitViewModel) {
                     FilterChip(
                         selected = it == vm.filtroStagione,
                         onClick = { vm.scegliStagione(it) },
-                        label = { Text(it?.nome ?: "nessuno") },
+                        label = { Text(it?.nome ?: "Qualsiasi stagione") },
                     )
                 }
             }
@@ -88,7 +98,14 @@ fun OutfitScreen(vm: OutfitViewModel) {
                 is Esito.Proposta -> {
                     // mapNotNull: un Capo eliminato dopo la Proposta sparisce dalla miniatura
                     OutfitVerticale(esito.outfit.capi.mapNotNull { stato.capi[it.id] })
-                    Text(esito.spiegazione, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+                    // La frase dice perché funziona; la regola resta come etichetta per chi vuole impararla.
+                    val perché = perché(esito.outfit)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(perché?.frase ?: esito.spiegazione, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+                        perché?.let {
+                            Text(it.regola, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                     // Il nome si chiede solo dopo Salva; una Proposta nuova chiude la finestra.
                     var chiediNome by rememberSaveable(esito.outfit.idCapi) { mutableStateOf(false) }
                     val traIPreferiti = esito.outfit.idCapi in preferiti
