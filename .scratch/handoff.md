@@ -3,11 +3,12 @@
 Stato a colpo d'occhio: [[roadmap]]. Branch `guardaroba-v1` (non ancora su `master`, niente push). Tutti i 21 ticket chiusi e verificati sul telefono.
 
 ## Dove siamo
-Fase **design con Impeccable**, una schermata alla volta: critica → l'utente sceglie → un agente applica in sequenza in un worktree → merge → l'utente prova sul telefono → aggiornare `docs/roadmap.md` e committare.
-- Outfit: critica 24/40, 5 modifiche fatte ([[0012-schermata-outfit-ridisegnata]]).
-- Guardaroba + scheda Capo: critica 22/40, 5 modifiche fatte ([[0013-guardaroba-e-scheda-capo-ridisegnati]]), più il bug del pannello Filtri che rimbalzava (commit `91db528`, difetto M3 sugli inset; corretto con il padding Top `safeDrawing`).
-- **In corso:** un agente in background sta facendo la critica dei **Preferiti** (`PreferitiScreen.kt`). Restituisce il resoconto in italiano; lo snapshot va in `.impeccable/critique/`. Da fare: presentarlo all'utente con le domande finali di critique.md (priorità, aspetto, quantità).
-- Poi: Impostazioni, ricritica di Outfit e Guardaroba, retro, merge su `master` (solo su richiesta).
+Fase **design con Impeccable**: tutte e quattro le schermate criticate e sistemate (ADR-0012 → 0015).
+- Preferiti: provati sul telefono dall'utente, ok.
+- Impostazioni: critica 24/40, 5 modifiche fatte e committate (`eb28ad7`, [[0015-impostazioni-ridisegnate]]). **Da provare sul telefono** (ricompilare: y): Esporta → Importa → Annulla / "Ripristina il Guardaroba di prima", "Controlla il backup del telefono", "Come scegliamo gli abbinamenti".
+- Difetto noto lasciato: tornando dalle regole lo scorrimento riparte quasi da capo (forse il backup ricalcolato accorcia la pagina; non verificato).
+- Poi: ricritica di Outfit, Guardaroba, Preferiti, Impostazioni → `/retro` → merge su `master` (solo su richiesta).
+- Script di installazione corretto: build giudicata dall'esito di Gradle; con un emulatore acceso sceglie da solo il telefono vero.
 
 ## Regole emerse in questa sessione (rispettarle)
 - **Telefono dell'utente (serial <serial-del-telefono>):** mai `adb` verso il telefono senza un sì esplicito. Ogni comando adb porta `-s emulator-5554`. Le installazioni sul telefono le fa l'utente con `scripts/installa-sul-telefono.sh`, da PowerShell: `& "C:\Program Files\Git\bin\bash.exe" scripts/installa-sul-telefono.sh`.
