@@ -1,8 +1,8 @@
 # Roadmap
 
-Aggiornata il **2026-11-21**. Fase attuale: **design con Impeccable, schermata Guardaroba e scheda Capo** (critica fatta, modifiche da avviare).
+Aggiornata il **2026-11-21**. Fase attuale: **design con Impeccable**: Outfit e Guardaroba sistemate; prossime Preferiti e Impostazioni.
 
-Riferimenti: [[spec]] · [[GLOSSARY]] · [[PRODUCT]] · storico completo: `git log --oneline` (109 commit, branch `guardaroba-v1`, non ancora su `master`).
+Riferimenti: [[spec]] · [[GLOSSARY]] · [[PRODUCT]] · storico completo: `git log --oneline` (116 commit, branch `guardaroba-v1`, non ancora su `master`).
 
 ```mermaid
 flowchart LR
@@ -28,7 +28,7 @@ flowchart LR
 - [ ] **Design con Impeccable**: una schermata alla volta, critica → modifiche → prova sul telefono
   - [x] [[PRODUCT]] scritto (`/impeccable init`)
   - [x] Outfit: critica 24/40 → 5 modifiche fatte ([[0012-schermata-outfit-ridisegnata]]); da ricriticare per il nuovo punteggio
-  - [ ] Guardaroba e scheda Capo: critica 22/40 fatta, **5 modifiche da fare** (scheda più corta, barra con ✕/Salva e conferma, "Salva e aggiungi" + "Duplica", motivo di Salva grigio, pulsante Filtri, foto in cima, caricamento, maiuscole)
+  - [x] Guardaroba e scheda Capo: critica 22/40 → 5 modifiche fatte ([[0013-guardaroba-e-scheda-capo-ridisegnati]]): pulsante Filtri, scheda corta con barra ✕/Salva, conferma "Scartare le modifiche?", "Salva e aggiungi un altro", "Duplica", riga "Manca: …"; da ricriticare
   - [ ] Preferiti
   - [ ] Impostazioni
 - [ ] **Retro**: problemi ricorrenti → regole nel CLAUDE.md
@@ -47,14 +47,14 @@ flowchart LR
 
 ## Decisioni (ADR)
 
-[[0001-offline-regole-senza-ai]] · [[0002-android-nativo]] · [[0003-foto-compresse-e-backup]] · [[0004-regole-di-armonia]] · [[0005-min-sdk-26]] · [[0006-filtro-stagione-azzera-gia-viste]] · [[0007-formato-export-zip]] · [[0008-parti-da-capo-ignora-filtro]] · [[0009-import-sostituisce-con-foto-rinominate]] · [[0010-proposta-scade-se-cambiano-i-suoi-capi]] · [[0011-preferito-giudicato-con-i-capi-di-adesso]] · [[0012-schermata-outfit-ridisegnata]]
+[[0001-offline-regole-senza-ai]] · [[0002-android-nativo]] · [[0003-foto-compresse-e-backup]] · [[0004-regole-di-armonia]] · [[0005-min-sdk-26]] · [[0006-filtro-stagione-azzera-gia-viste]] · [[0007-formato-export-zip]] · [[0008-parti-da-capo-ignora-filtro]] · [[0009-import-sostituisce-con-foto-rinominate]] · [[0010-proposta-scade-se-cambiano-i-suoi-capi]] · [[0011-preferito-giudicato-con-i-capi-di-adesso]] · [[0012-schermata-outfit-ridisegnata]] · [[0013-guardaroba-e-scheda-capo-ridisegnati]]
 
 ## Punteggi di design (Impeccable)
 
 | Schermata | Critica | Dopo le modifiche |
 |---|---|---|
 | Outfit | 24/40 | da ricriticare |
-| Guardaroba e scheda Capo | 22/40 | — |
+| Guardaroba e scheda Capo | 22/40 | da ricriticare |
 | Preferiti | — | — |
 | Impostazioni | — | — |
 
