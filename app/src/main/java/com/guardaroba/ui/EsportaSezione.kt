@@ -14,7 +14,7 @@ import java.time.LocalDate
 
 /** "Esporta" in Impostazioni: salva Capi, Preferiti e foto in un unico ZIP dove sceglie l'utente (SAF, nessun permesso). */
 @Composable
-fun SezioneEsporta(vm: EsportaViewModel = viewModel(factory = EsportaViewModel.Factory)) {
+fun EsportaSezione(vm: EsportaViewModel = viewModel(factory = EsportaViewModel.Factory)) {
     val selettore = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         uri?.let(vm::esporta)
     }
