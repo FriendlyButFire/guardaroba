@@ -266,10 +266,10 @@ if [[ ! -f "$APK" ]] || confirm "Vuoi ricompilarlo adesso (qualche minuto)?"; th
     warn "X: punta a $ATTUALE, non a questo repo ($ATTESO). Toglilo con: cmd //c \"subst X: /d\" e rilancia."
     exit 1
   fi
-  INIZIO=$(date +%s)
+  # Si giudica dall'esito di Gradle, non dall'ora del file: se l'APK è già aggiornato Gradle non lo riscrive.
   ( export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" ANDROID_HOME="$SDK"
-    cd "/x${REPO#"$RADICE"}" && ./gradlew assembleDebug )
-  [[ -f "$APK" && $(date -r "$APK" +%s) -ge $INIZIO ]] || { warn "La build non ha prodotto un APK nuovo: guarda gli errori qui sopra."; exit 1; }
+    cd "/x${REPO#"$RADICE"}" && ./gradlew assembleDebug ) && [[ -f "$APK" ]] \
+    || { warn "La build non è riuscita: guarda gli errori qui sopra."; exit 1; }
   say "${GREEN}✓${RESET} APK pronto."
 fi
 pause
