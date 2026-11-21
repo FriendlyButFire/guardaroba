@@ -25,6 +25,14 @@ class GuardarobaViewModel(private val dao: CapoDao, private val foto: Foto) : Vi
         viewModelScope.launch { dao.salva(capo, foto) }
     }
 
+    /** Quanti Preferiti spariscono eliminando il Capo [id]. */
+    suspend fun quantiPreferiti(id: Long) = dao.quantiPreferiti(id)
+
+    /** Elimina il Capo [id], la sua foto e i Preferiti che lo contengono. */
+    fun elimina(id: Long) {
+        viewModelScope.launch { dao.elimina(id, foto) }
+    }
+
     companion object {
         val Factory = viewModelFactory {
             initializer {
