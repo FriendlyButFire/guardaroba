@@ -205,7 +205,9 @@ run_wizard() {
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APK="$REPO/app/build/outputs/apk/debug/app-debug.apk"
 PACCHETTO="com.guardaroba"
-ADB="${ADB:-$LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe}"
+# Git Bash non sempre esporta LOCALAPPDATA: ricavalo dalla home.
+SDK="${LOCALAPPDATA:-$HOME/AppData/Local}/Android/Sdk"
+ADB="${ADB:-$SDK/platform-tools/adb.exe}"
 [[ -x "$ADB" ]] || ADB="adb"
 adb_() { MSYS_NO_PATHCONV=1 "$ADB" "$@"; }
 
@@ -260,7 +262,7 @@ if [[ ! -f "$APK" ]] || confirm "Vuoi ricompilarlo adesso (qualche minuto)?"; th
     exit 1
   fi
   INIZIO=$(date +%s)
-  ( export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" ANDROID_HOME="$LOCALAPPDATA/Android/Sdk"
+  ( export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" ANDROID_HOME="$SDK"
     cd "/x${REPO#"$RADICE"}" && ./gradlew assembleDebug )
   [[ -f "$APK" && $(date -r "$APK" +%s) -ge $INIZIO ]] || { warn "La build non ha prodotto un APK nuovo: guarda gli errori qui sopra."; exit 1; }
   say "${GREEN}✓${RESET} APK pronto."
