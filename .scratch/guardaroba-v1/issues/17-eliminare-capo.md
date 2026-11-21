@@ -4,9 +4,9 @@
 
 **Blocked by:** 04, 15
 
-**Status:** pronto-per-agente
+**Status:** chiuso
 
-- [ ] Avviso con il numero di Preferiti coinvolti (conferma semplice se sono zero)
-- [ ] Annulla non tocca nulla
-- [ ] La conferma elimina il Capo, il file della foto e i Preferiti che lo contengono
-- [ ] Test (Room in memoria, Robolectric): eliminare un Capo elimina in cascata i suoi Preferiti e lascia intatti gli altri
+- [x] Avviso con il numero di Preferiti coinvolti (conferma semplice se sono zero)
+- [x] Annulla non tocca nulla
+- [x] La conferma elimina il Capo, il file della foto e i Preferiti che lo contengono
+- [x] Test (Room in memoria, Robolectric): eliminare un Capo elimina in cascata i suoi Preferiti e lascia intatti gli altri

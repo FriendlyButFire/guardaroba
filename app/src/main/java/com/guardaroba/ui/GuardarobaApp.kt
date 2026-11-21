@@ -9,7 +9,6 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -56,8 +55,7 @@ fun GuardarobaApp() {
                 Sezione.GUARDAROBA -> GuardarobaScreen(onPartiDa = { outfit.partiDa(it.id); sezione = Sezione.OUTFIT })
                 Sezione.OUTFIT -> OutfitScreen(outfit)
                 Sezione.PREFERITI -> PreferitiScreen()
-                // Placeholder per section until its ticket lands.
-                else -> Text(sezione.titolo, style = MaterialTheme.typography.headlineMedium)
+                Sezione.IMPOSTAZIONI -> ImpostazioniScreen()
             }
         }
     }

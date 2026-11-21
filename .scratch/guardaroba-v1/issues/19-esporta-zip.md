@@ -4,8 +4,13 @@
 
 **Blocked by:** 05, 15
 
-**Status:** pronto-per-agente
+**Status:** chiuso
 
-- [ ] ZIP con un JSON (versione del formato, Capi, Preferiti) + cartella foto
-- [ ] Salvataggio via SAF, nessun permesso di storage
-- [ ] Messaggio chiaro di conferma o di errore
+- [x] ZIP con un JSON (versione del formato, Capi, Preferiti) + cartella foto
+- [x] Salvataggio via SAF, nessun permesso di storage
+- [x] Messaggio chiaro di conferma o di errore
+
+## Comments
+
+- Formato del JSON e Capi senza foto sul disco: ADR-0007.
+- Da verificare a mano su un telefono: il selettore SAF, il messaggio di conferma/errore e la cancellazione del file a metà (il percorso d'errore del ViewModel non ha test automatici).

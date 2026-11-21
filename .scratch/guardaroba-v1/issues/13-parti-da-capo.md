@@ -14,5 +14,5 @@
 
 ## Comments
 
-- Il Capo di partenza ignora il filtro Stagione qualunque sia la Categoria, non solo Capospalla e Accessori: vedi [[0007-parti-da-capo-ignora-filtro]]. ADR-0004 aggiornato: gli Accessori non compaiono nella Spiegazione.
+- Il Capo di partenza ignora il filtro Stagione qualunque sia la Categoria, non solo Capospalla e Accessori: vedi [[0008-parti-da-capo-ignora-filtro]]. ADR-0004 aggiornato: gli Accessori non compaiono nella Spiegazione.
 - Da verificare a mano sul telefono: pulsante "Parti da questo capo" nella scheda del Capo, intestazione "Parti da" e "Genera a caso" in Outfit.

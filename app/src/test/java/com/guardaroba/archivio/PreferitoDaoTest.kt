@@ -92,4 +92,41 @@ class PreferitoDaoTest {
         assertEquals(listOf(resta), preferiti.map { it.preferito.id })
         assertEquals(capi.toSet(), guardaroba.toSet())
     }
+
+    @Test
+    fun `eliminare un Capo elimina in cascata i suoi Preferiti e la sua foto, e lascia intatti gli altri`() = runBlocking {
+        val db = GuardarobaDatabase.apri(context)
+        val foto = Foto(context)
+        foto.file("scarpe.webp").apply { parentFile!!.mkdirs() }.writeText("foto")
+        val capi = db.inserisci(sopra, sotto, scarpe.copy(percorsoFoto = "scarpe.webp"), altreScarpe)
+        val (a, b, c, d) = capi.map { it.id }
+        val dao = db.preferitoDao()
+        dao.salva("neutri", setOf(a, b, c))
+        dao.salva("neutri", setOf(a, c))
+        val resta = dao.salva("neutri", setOf(a, b, d))
+
+        val quanti = db.capoDao().quantiPreferiti(c)
+        db.capoDao().elimina(c, foto)
+        val preferiti = dao.tutti().first()
+        val guardaroba = db.capoDao().tutti().first()
+        db.close()
+
+        assertEquals(2, quanti)
+        assertEquals(listOf(resta), preferiti.map { it.preferito.id })
+        assertEquals(setOf(a, b, d), preferiti.single().capi.map { it.id }.toSet())
+        assertEquals(capi.map { it.id } - c, guardaroba.map { it.id })
+        assertEquals(false, foto.file("scarpe.webp").exists())
+    }
+
+    @Test
+    fun `un Capo che non è in nessun Preferito ne conta zero`() = runBlocking {
+        val db = GuardarobaDatabase.apri(context)
+        val (a, b) = db.inserisci(sopra, sotto).map { it.id }
+        db.preferitoDao().salva("neutri", setOf(a))
+
+        val quanti = db.capoDao().quantiPreferiti(b)
+        db.close()
+
+        assertEquals(0, quanti)
+    }
 }

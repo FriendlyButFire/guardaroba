@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -39,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -61,6 +63,7 @@ import com.guardaroba.motore.PALETTE
 import com.guardaroba.motore.Stagione
 import com.guardaroba.motore.colore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Il campione a schermo di un Colore della Palette. */
@@ -79,6 +82,9 @@ fun GuardarobaScreen(
     val capi by vm.capi.collectAsStateWithLifecycle()
     // Id del Capo aperto nella scheda: null = chiusa, NUOVO = Capo nuovo.
     var aperto by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Quanti Preferiti contengono il Capo aperto, mentre è aperta la conferma di eliminazione; null = nessuna conferma.
+    var preferitiDaEliminare by rememberSaveable { mutableStateOf<Int?>(null) }
+    val scope = rememberCoroutineScope()
 
     aperto?.let { id ->
         val iniziale = capi?.find { it.id == id }
@@ -88,8 +94,16 @@ fun GuardarobaScreen(
                 onSalva = { vm.salva(it); aperto = null },
                 onAnnulla = { aperto = null },
                 iniziale = iniziale,
-                onPartiDa = iniziale?.let { { aperto = null; onPartiDa(it) } },
+                onElimina = { scope.launch { preferitiDaEliminare = vm.quantiPreferiti(id) } },
+                onPartiDa = { aperto = null; iniziale?.let(onPartiDa) },
             )
+            preferitiDaEliminare?.let { quanti ->
+                ConfermaEliminazione(
+                    quanti,
+                    onConferma = { vm.elimina(id); preferitiDaEliminare = null; aperto = null },
+                    onAnnulla = { preferitiDaEliminare = null },
+                )
+            }
             return
         }
     }
@@ -125,6 +139,26 @@ fun GuardarobaScreen(
             }
         }
     }
+}
+
+/** Chiede conferma prima di eliminare un Capo, avvisando dei [quanti] Preferiti che spariscono con lui. */
+@Composable
+private fun ConfermaEliminazione(quanti: Int, onConferma: () -> Unit, onAnnulla: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onAnnulla,
+        title = { Text("Eliminare il capo?") },
+        text = {
+            Text(
+                when (quanti) {
+                    0 -> "Il capo sparirà dal Guardaroba."
+                    1 -> "Il capo compare in 1 Preferito: verrà eliminato anche quello."
+                    else -> "Il capo compare in $quanti Preferiti: verranno eliminati anche quelli."
+                },
+            )
+        },
+        confirmButton = { TextButton(onClick = onConferma) { Text("Elimina") } },
+        dismissButton = { TextButton(onClick = onAnnulla) { Text("Annulla") } },
+    )
 }
 
 /** Una riga per filtro, scorrevole in orizzontale; toccare di nuovo la voce scelta la toglie. */
