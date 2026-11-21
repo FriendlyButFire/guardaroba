@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 enum class Sezione(val titolo: String, val icona: ImageVector) {
     GUARDAROBA("Guardaroba", Icons.AutoMirrored.Filled.List),
@@ -34,6 +35,7 @@ enum class Sezione(val titolo: String, val icona: ImageVector) {
 @Composable
 fun GuardarobaApp() {
     var sezione by rememberSaveable { mutableStateOf(Sezione.GUARDAROBA) }
+    val outfit: OutfitViewModel = viewModel(factory = OutfitViewModel.Factory)
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -50,8 +52,8 @@ fun GuardarobaApp() {
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
             when (sezione) {
-                Sezione.GUARDAROBA -> GuardarobaScreen()
-                Sezione.OUTFIT -> OutfitScreen()
+                Sezione.GUARDAROBA -> GuardarobaScreen(onPartiDa = { outfit.partiDa(it.id); sezione = Sezione.OUTFIT })
+                Sezione.OUTFIT -> OutfitScreen(outfit)
                 Sezione.PREFERITI -> PreferitiScreen()
                 Sezione.IMPOSTAZIONI -> ImpostazioniScreen()
             }

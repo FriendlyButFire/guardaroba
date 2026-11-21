@@ -75,7 +75,10 @@ fun Colore.testoSopra(): Color = if (l > 55) Color.Black else Color.White
 private const val NUOVO = 0L // l'id di un Capo non ancora salvato
 
 @Composable
-fun GuardarobaScreen(vm: GuardarobaViewModel = viewModel(factory = GuardarobaViewModel.Factory)) {
+fun GuardarobaScreen(
+    onPartiDa: (Capo) -> Unit,
+    vm: GuardarobaViewModel = viewModel(factory = GuardarobaViewModel.Factory),
+) {
     val capi by vm.capi.collectAsStateWithLifecycle()
     // Id del Capo aperto nella scheda: null = chiusa, NUOVO = Capo nuovo.
     var aperto by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -92,6 +95,7 @@ fun GuardarobaScreen(vm: GuardarobaViewModel = viewModel(factory = GuardarobaVie
                 onAnnulla = { aperto = null },
                 iniziale = iniziale,
                 onElimina = { scope.launch { preferitiDaEliminare = vm.quantiPreferiti(id) } },
+                onPartiDa = { aperto = null; iniziale?.let(onPartiDa) },
             )
             preferitiDaEliminare?.let { quanti ->
                 ConfermaEliminazione(

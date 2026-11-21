@@ -14,4 +14,8 @@ Le soglie e le loro ragioni sono tutte qui sotto. La ricerca con le fonti è in 
   - altrimenti, $75° < d < 150°$: non valido
 - **Saturazione e luminosità non entrano nella regola.** Nella Palette fissa due Colori con la stessa tinta differiscono sempre di almeno 21 punti di luminosità, e i grigi e marroni poco saturi sono già Neutri. *shortcut*: con colori personalizzati servirebbero "monocromatico solo se ΔL ≥ 15" e "S < 15 → neutro".
 - Sui 15 Colori non neutri escono 105 coppie: 5 monocromatiche, 35 analoghe, 16 complementari, 49 rifiutate (elenco in `ArmoniaTest`).
-- La Spiegazione elenca tutti i Colori principali distinti dell'Outfit e poi l'Armonia, es. "blu royal + arancione + nero: complementari".
+- La Spiegazione elenca tutti i Colori principali distinti dell'Outfit, tranne quelli degli Accessori che non vincolano, e poi l'Armonia, es. "blu royal + arancione + nero: complementari".
+
+## Colori consigliati (ticket 14)
+
+`coloriConsigliati(capo)` applica le stesse regole alla coppia "Colore principale del Capo + un Colore della Palette": per un Colore non neutro escono i 10 Neutri più i Colori in Armonia, per un Neutro tutti gli altri 24. Il Colore stesso del Capo non è consigliato: non dice niente di nuovo. Accanto a ogni Colore c'è la regola con lo stesso vocabolario della Spiegazione ("neutri", "un colore + neutri", "monocromatico", "analoghi", "complementari"), e la schermata li raggruppa per regola, in ordine di Palette.

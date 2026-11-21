@@ -73,10 +73,16 @@ import java.io.IOException
  * Un campo = uno stato + una [Sezione]; nulla si salva finché non si preme Salva.
  * Una foto scelta qui è già compressa in [Foto]; se non arriva al salvataggio (sostituita, o form chiuso senza Salva) il form la cancella,
  * mentre quella di [iniziale] la cancella [com.guardaroba.archivio.CapoDao.salva] solo a Salva.
- * [onElimina] chiede di eliminare [iniziale]: la conferma la chiede chi chiama.
+ * [onElimina] chiede di eliminare [iniziale]: la conferma la chiede chi chiama. [onPartiDa] è "Parti da questo capo" su [iniziale].
  */
 @Composable
-fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = null, onElimina: () -> Unit) {
+fun CapoForm(
+    onSalva: (Capo) -> Unit,
+    onAnnulla: () -> Unit,
+    iniziale: Capo? = null,
+    onElimina: () -> Unit,
+    onPartiDa: () -> Unit,
+) {
     var categoria by rememberSaveable { mutableStateOf(iniziale?.categoria) }
     var tipo by rememberSaveable { mutableStateOf(iniziale?.tipo) }
     var colorePrincipale by rememberSaveable { mutableStateOf(iniziale?.colorePrincipale) }
@@ -128,6 +134,8 @@ fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = n
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(if (iniziale == null) "Nuovo capo" else "Modifica capo", style = MaterialTheme.typography.headlineSmall)
+        // Parte dal Capo salvato: le modifiche non salvate qui si perdono, come con Annulla.
+        if (iniziale != null) Button(onClick = onPartiDa) { Text("Parti da questo capo") }
 
         Sezione("Categoria") {
             Categoria.entries.forEach {

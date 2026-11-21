@@ -18,8 +18,13 @@ data class Outfit(val capi: List<Capo>) {
 }
 
 sealed interface Richiesta {
-    /** [filtroStagione] null = nessun filtro, entrano tutti i Capi. */
-    data class Genera(val filtroStagione: Stagione? = null) : Richiesta
+    /** null = nessun filtro, entrano tutti i Capi. */
+    val filtroStagione: Stagione?
+
+    data class Genera(override val filtroStagione: Stagione? = null) : Richiesta
+
+    /** "Parti da questo capo": [capo] è in ogni Proposta, anche se è un Capospalla o un Accessorio, e il filtro non lo esclude. */
+    data class PartiDa(val capo: Capo, override val filtroStagione: Stagione? = null) : Richiesta
 }
 
 sealed interface Esito {
@@ -34,8 +39,19 @@ sealed interface Esito {
  * (insiemi di id dei Capi, vedi [Outfit.idCapi]). [caso] è iniettabile per avere test deterministici.
  */
 fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Long>>, caso: Random = Random.Default): Esito {
-    val filtro = when (richiesta) { is Richiesta.Genera -> richiesta.filtroStagione }
-    val perCategoria = guardaroba.filter { filtro == null || filtro.ammette(it.stagione) }.groupBy { it.categoria }
+    val filtro = richiesta.filtroStagione
+    val partenza = (richiesta as? Richiesta.PartiDa)?.capo
+    val perCategoria = guardaroba.filter { it.id != partenza?.id && (filtro == null || filtro.ammette(it.stagione)) }
+        .groupBy { it.categoria }.toMutableMap()
+    if (partenza != null) {
+        // Il Capo di partenza è l'unico della sua Categoria; con un Sopra o un Sotto non entra l'Intero, e viceversa.
+        perCategoria[partenza.categoria] = listOf(partenza)
+        when (partenza.categoria) {
+            Categoria.SOPRA, Categoria.SOTTO -> perCategoria.remove(Categoria.INTERO)
+            Categoria.INTERO -> { perCategoria.remove(Categoria.SOPRA); perCategoria.remove(Categoria.SOTTO) }
+            else -> {}
+        }
+    }
     fun capi(categoria: Categoria) = perCategoria[categoria].orEmpty()
     // Sopra e Sotto mancano solo se manca anche l'alternativa, l'Intero.
     val haIntero = Categoria.INTERO in perCategoria
@@ -47,26 +63,46 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
         capi(Categoria.INTERO).map { intero -> listOf(intero) }
     fun proposte(candidati: List<Outfit>) = candidati.mapNotNull { o -> spiegazione(o)?.let { Esito.Proposta(o, it) } }
     // Con invernale o mezza stagione ogni Capospalla compatibile dà una Proposta; senza nessuno, l'Outfit resta senza.
-    val capospalla = if (filtro == Stagione.INVERNALE || filtro == Stagione.MEZZA_STAGIONE) capi(Categoria.CAPOSPALLA) else emptyList()
+    // Un Capospalla di partenza invece entra sempre: senza di lui non c'è Proposta.
+    val capospallaDiPartenza = partenza?.categoria == Categoria.CAPOSPALLA
+    val capospalla = if (capospallaDiPartenza || filtro == Stagione.INVERNALE || filtro == Stagione.MEZZA_STAGIONE) {
+        capi(Categoria.CAPOSPALLA)
+    } else {
+        emptyList()
+    }
+    val accessori = listOfNotNull(partenza?.takeIf { it.categoria == Categoria.ACCESSORI }) // solo come Capo di partenza
     val valide = basi.flatMap { base ->
         capi(Categoria.SCARPE).flatMap { scarpe ->
-            proposte(capospalla.map { Outfit(base + it + scarpe) }).ifEmpty { proposte(listOf(Outfit(base + scarpe))) }
+            val conCapospalla = proposte(capospalla.map { Outfit(base + it + scarpe + accessori) })
+            if (capospallaDiPartenza) conCapospalla else conCapospalla.ifEmpty { proposte(listOf(Outfit(base + scarpe + accessori))) }
         }
     }
     if (valide.isEmpty()) return Esito.NessunAbbinamento
     return valide.filter { it.outfit.idCapi !in giàViste }.randomOrNull(caso) ?: Esito.Esaurite
 }
 
-/** La Spiegazione dell'Outfit, o null se l'Outfit non è valido. */
+/** La Spiegazione dell'Outfit, o null se l'Outfit non è valido. Gli Accessori non contano (ADR-0004). */
 private fun spiegazione(outfit: Outfit): String? {
-    if (outfit.capi.count { it.motivo != Motivo.TINTA_UNITA } > 1) return null
-    val colori = outfit.capi.map { it.colorePrincipale }.distinct()
+    val capi = outfit.capi.filter { it.categoria != Categoria.ACCESSORI }
+    if (capi.count { it.motivo != Motivo.TINTA_UNITA } > 1) return null
+    val colori = capi.map { it.colorePrincipale }.distinct()
+    return colori.joinToString(" + ") { it.nome } + ": " + (regola(colori) ?: return null)
+}
+
+/** La regola che rende validi insieme questi Colori distinti, o null se non stanno insieme. */
+private fun regola(colori: List<Colore>): String? {
     val nonNeutri = colori.filterNot { it.neutro }
-    val regola = when (nonNeutri.size) {
+    return when (nonNeutri.size) {
         0 -> "neutri"
         1 -> "un colore + neutri"
-        2 -> armonia(nonNeutri[0], nonNeutri[1]) ?: return null
-        else -> return null
+        2 -> armonia(nonNeutri[0], nonNeutri[1])
+        else -> null
     }
-    return colori.joinToString(" + ") { it.nome } + ": " + regola
 }
+
+/** Un Colore della Palette che sta bene con un Capo, con la regola che li abbina (es. "complementari"). */
+data class Consiglio(val colore: Colore, val regola: String)
+
+/** I Colori della Palette, in ordine di Palette, che starebbero bene col Colore principale del [capo], tranne lo stesso. */
+fun coloriConsigliati(capo: Capo): List<Consiglio> = (PALETTE - capo.colorePrincipale)
+    .mapNotNull { c -> regola(listOf(capo.colorePrincipale, c))?.let { Consiglio(c, it) } }
