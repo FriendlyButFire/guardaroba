@@ -1,9 +1,16 @@
 package com.guardaroba.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -39,12 +46,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,7 +63,9 @@ import com.guardaroba.archivio.Capo
 import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Consiglio
 import com.guardaroba.motore.Esito
+import com.guardaroba.motore.Motivo
 import com.guardaroba.motore.Stagione
+import com.guardaroba.motore.colore
 import com.guardaroba.motore.perché
 
 @Composable
@@ -83,7 +96,7 @@ fun OutfitScreen(vm: OutfitViewModel) {
                     FilterChip(
                         selected = it == vm.filtroStagione,
                         onClick = { vm.scegliStagione(it) },
-                        label = { Text(it?.nome ?: "Qualsiasi stagione") },
+                        label = { Text((it?.nome ?: "qualsiasi stagione").maiuscola()) },
                     )
                 }
             }
@@ -93,51 +106,68 @@ fun OutfitScreen(vm: OutfitViewModel) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            when (val esito = stato?.esito) {
-                null -> Messaggio("Premi Genera per ricevere un Outfit fatto con i tuoi Capi.")
-                is Esito.Proposta -> {
-                    // mapNotNull: un Capo eliminato dopo la Proposta sparisce dalla miniatura
-                    OutfitVerticale(esito.outfit.capi.mapNotNull { stato.capi[it.id] })
-                    // La frase dice perché funziona; la regola resta come etichetta per chi vuole impararla.
-                    val perché = perché(esito.outfit)
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(perché?.frase ?: esito.spiegazione, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-                        perché?.let {
-                            Text(it.regola, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                    // Il nome si chiede solo dopo Salva; una Proposta nuova chiude la finestra.
-                    var chiediNome by rememberSaveable(esito.outfit.idCapi) { mutableStateOf(false) }
-                    val traIPreferiti = esito.outfit.idCapi in preferiti
-                    FilledTonalButton(onClick = { chiediNome = true }, enabled = !traIPreferiti) {
-                        Icon(
-                            if (traIPreferiti) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                            contentDescription = null,
-                            modifier = Modifier.size(ButtonDefaults.IconSize),
-                        )
-                        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                        Text(if (traIPreferiti) "Tra i Preferiti" else "Salva")
-                    }
-                    if (chiediNome && !traIPreferiti) {
-                        FinestraNome("Salva tra i Preferiti", "", onChiudi = { chiediNome = false }) { vm.salva(it) }
-                    }
-                }
-                is Esito.MancaCategoria ->
-                    Messaggio(mancano(esito.categorie, vm.partenza?.let { stato?.capi?.get(it)?.categoria }, vm.filtroStagione != null))
-                // Cosa non va e cosa fare, con le ragioni del Motore: niente vicoli ciechi.
-                is Esito.NessunAbbinamento -> Column(
+            // Material fade through tra una Proposta e l'altra; con "Rimuovi animazioni" Compose azzera le durate (animator_duration_scale).
+            AnimatedContent(
+                targetState = stato?.esito,
+                contentKey = { (it as? Esito.Proposta)?.outfit?.idCapi ?: it },
+                transitionSpec = {
+                    (fadeIn(tween(210, delayMillis = 90)) + scaleIn(tween(210, delayMillis = 90), initialScale = 0.92f)) togetherWith
+                        fadeOut(tween(90))
+                },
+                label = "Proposta",
+            ) { esito ->
+                Column(
+                    Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        if (vm.partenza != null) "Nessun abbinamento per questo Capo" else "Nessun abbinamento",
-                        style = MaterialTheme.typography.titleLarge,
-                        textAlign = TextAlign.Center,
-                    )
-                    Messaggio(esito.ragione.replaceFirstChar { it.uppercase() } + ".")
-                    Messaggio(esito.rimedio)
+                    when (esito) {
+                        null -> Messaggio("Premi Genera per ricevere un Outfit fatto con i tuoi Capi.")
+                        is Esito.Proposta -> {
+                            // mapNotNull: un Capo eliminato dopo la Proposta sparisce dalla miniatura
+                            OutfitVerticale(esito.outfit.capi.mapNotNull { stato?.capi?.get(it.id) })
+                            // La frase dice perché funziona; la regola resta come etichetta per chi vuole impararla.
+                            val perché = perché(esito.outfit)
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(perché?.frase ?: esito.spiegazione, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+                                perché?.let {
+                                    Text(it.regola.maiuscola(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            // Il nome si chiede solo dopo Salva; una Proposta nuova chiude la finestra.
+                            var chiediNome by rememberSaveable(esito.outfit.idCapi) { mutableStateOf(false) }
+                            val traIPreferiti = esito.outfit.idCapi in preferiti
+                            FilledTonalButton(onClick = { chiediNome = true }, enabled = !traIPreferiti) {
+                                Icon(
+                                    if (traIPreferiti) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                                )
+                                Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                                Text(if (traIPreferiti) "Tra i Preferiti" else "Salva")
+                            }
+                            if (chiediNome && !traIPreferiti) {
+                                FinestraNome("Salva tra i Preferiti", "", onChiudi = { chiediNome = false }) { vm.salva(it) }
+                            }
+                        }
+                        is Esito.MancaCategoria ->
+                            Messaggio(mancano(esito.categorie, vm.partenza?.let { stato?.capi?.get(it)?.categoria }, vm.filtroStagione != null))
+                        // Cosa non va e cosa fare, con le ragioni del Motore: niente vicoli ciechi.
+                        is Esito.NessunAbbinamento -> Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                if (vm.partenza != null) "Nessun abbinamento per questo Capo" else "Nessun abbinamento",
+                                style = MaterialTheme.typography.titleLarge,
+                                textAlign = TextAlign.Center,
+                            )
+                            Messaggio(esito.ragione.maiuscola() + ".")
+                            Messaggio(esito.rimedio)
+                        }
+                        Esito.Esaurite -> Messaggio("Hai visto tutte le Proposte possibili.\nPremi Ricomincia per rivederle.")
+                    }
                 }
-                Esito.Esaurite -> Messaggio("Hai visto tutte le Proposte possibili.\nPremi Ricomincia per rivederle.")
             }
             stato?.consigliati?.takeIf { it.isNotEmpty() }?.let { ColoriConsigliati(it) }
         }
@@ -156,15 +186,28 @@ private fun OutfitVerticale(capi: List<Capo>) {
     val (accanto, corpo) = capi.sortedBy { it.categoria }
         .partition { it.categoria == Categoria.CAPOSPALLA || it.categoria == Categoria.ACCESSORI }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Column { corpo.forEach { RiquadroCapo(it, Modifier.width(144.dp)) } }
-        if (accanto.isNotEmpty()) Column { accanto.forEach { RiquadroCapo(it, Modifier.width(96.dp)) } }
+        Column { corpo.forEach { RiquadroCapo(it, Modifier.width(144.dp).clearAndSetSemantics { contentDescription = descrizione(it) }) } }
+        if (accanto.isNotEmpty()) {
+            Column { accanto.forEach { RiquadroCapo(it, Modifier.width(96.dp).clearAndSetSemantics { contentDescription = descrizione(it) }) } }
+        }
     }
 }
+
+/** Il riquadro detto a voce, Categoria compresa: "Sopra: t-shirt, rosso e bianco, a righe". */
+private fun descrizione(capo: Capo): String =
+    "${capo.categoria.nome}: ${capo.tipo}, " + listOfNotNull(capo.colorePrincipale, capo.coloreSecondario).joinToString(" e ") { colore(it).nome } +
+        (if (capo.motivo != Motivo.TINTA_UNITA) ", a ${capo.motivo.nome}" else "")
+
+/** Le etichette cominciano con la maiuscola; i nomi del Motore ("estivo", "rosso", "analoghi") sono minuscoli. */
+private fun String.maiuscola() = replaceFirstChar { it.uppercase() }
 
 /** I Colori della Palette che starebbero bene col Capo di partenza, raggruppati per regola; chiusi finché non si aprono. */
 @Composable
 private fun ColoriConsigliati(consigliati: List<Consiglio>) {
     var aperti by rememberSaveable { mutableStateOf(false) }
+    // Aperti finiscono sotto il pulsante principale: si portano in vista.
+    val inVista = remember { BringIntoViewRequester() }
+    LaunchedEffect(aperti) { if (aperti) inVista.bringIntoView() }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClickLabel = if (aperti) "Chiudi" else "Apri") { aperti = !aperti },
@@ -173,18 +216,19 @@ private fun ColoriConsigliati(consigliati: List<Consiglio>) {
             Text("Colori consigliati", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
             Icon(if (aperti) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = null)
         }
-        AnimatedVisibility(aperti) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (aperti) {
+            Column(Modifier.bringIntoViewRequester(inVista), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 consigliati.groupBy { it.regola }.forEach { (regola, gruppo) ->
-                    Text(regola, style = MaterialTheme.typography.labelLarge)
+                    Text(regola.maiuscola(), style = MaterialTheme.typography.labelLarge)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         gruppo.forEach { (colore) ->
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Box(
-                                    Modifier.size(20.dp).background(colore.campione(), CircleShape)
-                                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
-                                )
-                                Text(colore.nome, style = MaterialTheme.typography.bodySmall)
+                            Row(
+                                Modifier.clearAndSetSemantics { contentDescription = colore.nome },
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Box(Modifier.size(20.dp).background(colore.campione(), CircleShape).border(colore.bordo(), CircleShape))
+                                Text(colore.nome.maiuscola(), style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -208,17 +252,17 @@ private fun AvvisoFuoriStagione(avviso: FuoriStagione, onOk: () -> Unit) {
     val (stagione, filtro) = avviso
     // Il plurale non si ricava da Stagione.nome; "tutto l'anno" non è mai un filtro, ma il when deve coprirlo.
     val capi = when (filtro) {
-        Stagione.ESTIVO -> "capi estivi"
-        Stagione.INVERNALE -> "capi invernali"
-        Stagione.MEZZA_STAGIONE -> "capi di mezza stagione"
-        Stagione.TUTTO_L_ANNO -> "capi per tutto l'anno"
+        Stagione.ESTIVO -> "Capi estivi"
+        Stagione.INVERNALE -> "Capi invernali"
+        Stagione.MEZZA_STAGIONE -> "Capi di mezza stagione"
+        Stagione.TUTTO_L_ANNO -> "Capi per tutto l'anno"
     }
     AlertDialog(
         onDismissRequest = onOk,
         text = {
             Text(
-                "Hai scelto un capo fuori stagione (${stagione.nome}) con il filtro " +
-                    "${filtro.nome.replaceFirstChar { it.uppercase() }}: ti propongo comunque abbinamenti con $capi.",
+                "Hai scelto un Capo fuori stagione (${stagione.nome}) con il filtro " +
+                    "${filtro.nome.maiuscola()}: ti propongo comunque abbinamenti con $capi.",
             )
         },
         confirmButton = { TextButton(onClick = onOk) { Text("Ok") } },

@@ -1,6 +1,7 @@
 package com.guardaroba.ui
 
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -68,6 +70,20 @@ import kotlinx.coroutines.withContext
 
 /** Il campione a schermo di un Colore della Palette. */
 fun Colore.campione(): Color = Color.hsl(h.toFloat(), s / 100f, l / 100f)
+
+/**
+ * Il bordo di un campione o di un riquadro: marcato quando il Colore si confonde con lo sfondo (un Capo nero nel tema scuro,
+ * uno bianco in quello chiaro), cioè sotto il contrasto 3:1 che WCAG chiede agli elementi non testuali.
+ */
+@Composable
+fun Colore.bordo(): BorderStroke {
+    val (a, b) = listOf(campione().luminance(), MaterialTheme.colorScheme.surface.luminance()).sorted()
+    return if ((b + 0.05f) / (a + 0.05f) < 3f) {
+        BorderStroke(2.dp, MaterialTheme.colorScheme.outline)
+    } else {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    }
+}
 
 /** Testo leggibile sopra il campione. */
 fun Colore.testoSopra(): Color = if (l > 55) Color.Black else Color.White
@@ -201,7 +217,7 @@ private fun BarraFiltri(filtro: Filtro, onCambia: (Filtro) -> Unit) {
                             Modifier
                                 .size(16.dp)
                                 .background(it.campione(), CircleShape)
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+                                .border(it.bordo(), CircleShape),
                         )
                     },
                 )
@@ -248,7 +264,7 @@ fun RiquadroCapo(capo: Capo, modifier: Modifier = Modifier) {
             .aspectRatio(1f)
             .clip(forma)
             .background(principale.campione())
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, forma),
+            .border(principale.bordo(), forma),
     ) {
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {

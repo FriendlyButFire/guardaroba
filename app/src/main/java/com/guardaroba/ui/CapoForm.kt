@@ -10,6 +10,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.TakePicture
 import androidx.core.content.FileProvider
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -264,11 +265,7 @@ private fun CampioneColore(colore: Colore, selezionato: Boolean, onClick: () -> 
             Modifier
                 .size(44.dp)
                 .background(colore.campione(), CircleShape)
-                .border(
-                    if (selezionato) 3.dp else 1.dp,
-                    if (selezionato) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                    CircleShape,
-                ),
+                .border(if (selezionato) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else colore.bordo(), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             if (selezionato) Icon(Icons.Filled.Check, contentDescription = null, tint = colore.testoSopra())
