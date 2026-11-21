@@ -82,7 +82,7 @@ class ImportazioneTest {
         assertEquals(prima.second, dopo.second)
         // Le foto del Guardaroba sostituito spariscono: nella cartella resta solo quella importata.
         assertEquals(1, dopo.third.size)
-        assertEquals(db.capoDao().run { runBlocking { tutti().first() } }.mapNotNull { it.percorsoFoto }.toSet(), dopo.third)
+        assertEquals(runBlocking { db.capoDao().tutti().first() }.mapNotNull { it.percorsoFoto }.toSet(), dopo.third)
     }
 
     @Test
@@ -149,6 +149,10 @@ class ImportazioneTest {
             "foto mancante nello ZIP" to exportModificato { it.capo(1).put("percorsoFoto", "manca.webp") },
             "Preferito con un Capo che non c'è" to exportModificato { it.preferito(0).getJSONArray("capi").put(999) },
             "Preferito senza Capi" to exportModificato { it.preferito(0).put("capi", org.json.JSONArray()) },
+            "Preferito senza la lista dei Capi" to exportModificato { it.preferito(0).remove("capi") },
+            "due Preferiti con gli stessi Capi" to exportModificato {
+                it.getJSONArray("preferiti").put(JSONObject(it.preferito(0).toString()).put("id", it.preferito(0).getLong("id") + 1))
+            },
             "Preferito senza spiegazione" to exportModificato { it.preferito(0).remove("spiegazione") },
             "voce estranea" to exportModificato(listOf("altro.txt" to byteArrayOf(1))),
             "voce che esce dalla cartella" to exportModificato(listOf("foto/../guardaroba.db" to byteArrayOf(1))),
@@ -160,6 +164,20 @@ class ImportazioneTest {
             assertThrows(caso, ArchivioNonValido::class.java) { importa(file) }
             assertEquals(caso, prima, istantanea())
         }
+    }
+
+    @Test
+    fun `se la transazione fallisce le foto copiate dallo ZIP spariscono e il Guardaroba resta intatto`() {
+        riempi()
+        val zip = esporta()
+        cambiaTutto()
+        val prima = istantanea()
+        // I Capi sono già stati sostituiti quando l'inserimento dei Preferiti fallisce: tutto deve tornare indietro.
+        db.openHelper.writableDatabase.execSQL("CREATE TRIGGER blocca BEFORE INSERT ON preferito BEGIN SELECT RAISE(ABORT, 'prova'); END")
+
+        assertThrows(Exception::class.java) { importa(zip) }
+
+        assertEquals(prima, istantanea())
     }
 
     @Test

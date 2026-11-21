@@ -5,13 +5,14 @@ import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Motivo
 import com.guardaroba.motore.PALETTE
 import com.guardaroba.motore.Stagione
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
-import java.io.OutputStream
 import java.util.UUID
 import java.util.zip.ZipInputStream
 
@@ -31,12 +32,15 @@ class Importazione(private val db: GuardarobaDatabase, private val foto: Foto) {
         val nuoveFoto = mutableMapOf<String, String>() // nome nello ZIP → nome sul disco
         val capi = try {
             val (capi, preferiti) = valida(leggi(input, nuoveFoto), nuoveFoto)
-            db.withTransaction {
-                db.preferitoDao().eliminaTutti() // la cascata toglie anche preferito_capo
-                db.capoDao().eliminaTutti()
-                db.capoDao().inserisci(capi)
-                db.preferitoDao().inserisciPreferiti(preferiti.map { it.first })
-                db.preferitoDao().inserisci(preferiti.flatMap { (p, idCapi) -> idCapi.map { PreferitoCapo(p.id, it) } })
+            // Una cancellazione all'uscita da withTransaction, a commit fatto, finirebbe nel catch e cancellerebbe foto in uso.
+            withContext(NonCancellable) {
+                db.withTransaction {
+                    db.preferitoDao().eliminaTutti() // la cascata toglie anche preferito_capo
+                    db.capoDao().eliminaTutti()
+                    db.capoDao().inserisci(capi)
+                    db.preferitoDao().inserisciPreferiti(preferiti.map { it.first })
+                    db.preferitoDao().inserisci(preferiti.flatMap { (p, idCapi) -> idCapi.map { PreferitoCapo(p.id, it) } })
+                }
             }
             capi
         } catch (e: Throwable) {
@@ -44,34 +48,34 @@ class Importazione(private val db: GuardarobaDatabase, private val foto: Foto) {
             throw e
         }
         // Solo ora le foto del Guardaroba sostituito, quelle dello ZIP senza Capo e gli avanzi di import interrotti non servono più.
+        // shortcut: cancella anche una foto appena compressa da un form non ancora salvato; l'import sta in Impostazioni, quindi non capita.
         val inUso = capi.mapNotNull { it.percorsoFoto }.toSet()
         foto.tutte().filterNot { it in inUso }.forEach(foto::elimina)
     }
 
     /** Legge le voci dello ZIP: ritorna il JSON e copia ogni foto sul disco, registrandola in [nuoveFoto]. */
     private fun leggi(input: InputStream, nuoveFoto: MutableMap<String, String>): JSONObject {
+        val zip = ZipInputStream(input)
         var json: ByteArray? = null
-        try {
-            val zip = ZipInputStream(input)
-            generateSequence { zip.nextEntry }.forEach { voce ->
-                val nome = voce.name
-                when {
-                    nome == Esportazione.NOME_JSON -> {
-                        if (json != null) throw ArchivioNonValido("$nome ripetuto")
-                        json = ByteArrayOutputStream().also { zip.copiaAlPiù(it, MAX_JSON) }.toByteArray()
-                    }
-                    nome.startsWith("${Foto.CARTELLA}/") && nome.substringAfter('/').let { it.isNotEmpty() && it.none { c -> c == '/' || c == '\\' } && it != "." && it != ".." } -> {
-                        val nomeFoto = nome.substringAfter('/')
-                        if (nomeFoto in nuoveFoto) throw ArchivioNonValido("Foto $nomeFoto ripetuta")
-                        val suDisco = "${UUID.randomUUID()}.webp"
-                        nuoveFoto[nomeFoto] = suDisco
-                        foto.file(suDisco).apply { parentFile!!.mkdirs() }.outputStream().use { zip.copiaAlPiù(it, MAX_FOTO) }
-                    }
-                    else -> throw ArchivioNonValido("Voce estranea nello ZIP: $nome")
-                }
+        var restanti = MAX_TOTALE
+        while (true) {
+            val nome = leggendo { zip.nextEntry }?.name ?: break
+            // Il nome serve solo come chiave: sul disco la foto va sotto un UUID, quindi non può uscire dalla cartella.
+            val nomeFoto = nome.removePrefix("${Foto.CARTELLA}/").takeIf { it != nome && it.isNotEmpty() && it.none { c -> c == '/' || c == '\\' } }
+            if (nome != Esportazione.NOME_JSON && nomeFoto == null) throw ArchivioNonValido("Voce estranea nello ZIP: $nome")
+            val bytes = leggendo { zip.leggiAlPiù(minOf(MAX_VOCE, restanti)) }
+            restanti -= bytes.size
+            if (nomeFoto == null) {
+                if (json != null) throw ArchivioNonValido("$nome ripetuto")
+                json = bytes
+            } else {
+                if (nomeFoto in nuoveFoto) throw ArchivioNonValido("Foto $nomeFoto ripetuta")
+                // shortcut: i byte non vengono decodificati come immagine; una foto rovinata si vede vuota. Da controllare se capita.
+                val suDisco = "${UUID.randomUUID()}.webp"
+                nuoveFoto[nomeFoto] = suDisco
+                // Un errore di scrittura (disco pieno) non è colpa del file: resta una IOException, non [ArchivioNonValido].
+                foto.file(suDisco).apply { parentFile!!.mkdirs() }.writeBytes(bytes)
             }
-        } catch (e: IOException) {
-            throw ArchivioNonValido("File illeggibile o non ZIP", e)
         }
         val testo = json ?: throw ArchivioNonValido("Manca ${Esportazione.NOME_JSON}")
         return try {
@@ -104,8 +108,7 @@ class Importazione(private val db: GuardarobaDatabase, private val foto: Foto) {
         val idCapi = capi.map { it.id }.toSet()
         if (idCapi.size != capi.size) throw ArchivioNonValido("Id di Capo ripetuto")
         val preferiti = json.lista("preferiti").map { p ->
-            val suoiCapi = p.get("capi").let { it as? JSONArray ?: throw ArchivioNonValido("capi non è una lista") }
-                .let { a -> (0 until a.length()).map { i -> a.get(i).intero() } }
+            val suoiCapi = p.elementi("capi").map { it.intero() }
             if (suoiCapi.isEmpty() || suoiCapi.toSet().size != suoiCapi.size || !idCapi.containsAll(suoiCapi)) {
                 throw ArchivioNonValido("Preferito con Capi vuoti, ripetuti o assenti")
             }
@@ -117,13 +120,16 @@ class Importazione(private val db: GuardarobaDatabase, private val foto: Foto) {
             ) to suoiCapi.toSet()
         }
         if (preferiti.map { it.first.id }.toSet().size != preferiti.size) throw ArchivioNonValido("Id di Preferito ripetuto")
+        // [PreferitoDao.salva] tiene un solo Preferito per insieme di Capi: l'archivio deve rispettarlo.
+        if (preferiti.map { it.second }.toSet().size != preferiti.size) throw ArchivioNonValido("Due Preferiti con gli stessi Capi")
         return capi to preferiti
     }
 
     companion object {
-        // Una foto compressa pesa ~60 KB e il JSON di ~400 Capi qualche centinaio: i limiti fermano solo file assurdi (o ZIP bomb).
-        private const val MAX_JSON = 10L * 1024 * 1024
-        private const val MAX_FOTO = 10L * 1024 * 1024
+        // Una foto compressa pesa ~60 KB e il JSON di ~400 Capi qualche centinaio di KB, il tutto ~25 MB (ADR-0003):
+        // i limiti fermano solo file assurdi o ZIP bomb, prima che riempiano memoria e disco.
+        private const val MAX_VOCE = 10 * 1024 * 1024
+        private const val MAX_TOTALE = 200 * 1024 * 1024
     }
 }
 
@@ -138,23 +144,27 @@ private fun JSONObject.colore(nome: String) = testo(nome).also { id -> if (PALET
 private inline fun <reified E : Enum<E>> JSONObject.enum(nome: String): E = testo(nome).let { valore ->
     enumValues<E>().firstOrNull { it.name == valore } ?: throw ArchivioNonValido("$nome sconosciuto: $valore")
 }
-private fun JSONObject.lista(nome: String): List<JSONObject> = (campo(nome) as? JSONArray ?: throw ArchivioNonValido("$nome non è una lista"))
-    .let { a -> (0 until a.length()).map { a.get(it) as? JSONObject ?: throw ArchivioNonValido("Voce di $nome non valida") } }
+private fun JSONObject.elementi(nome: String): List<Any> = (campo(nome) as? JSONArray ?: throw ArchivioNonValido("$nome non è una lista"))
+    .let { a -> (0 until a.length()).map(a::get) }
+private fun JSONObject.lista(nome: String): List<JSONObject> = elementi(nome).map { it as? JSONObject ?: throw ArchivioNonValido("Voce di $nome non valida") }
 private fun Any.intero(): Long = when (this) {
     is Int -> toLong()
     is Long -> this
     else -> throw ArchivioNonValido("$this non è un intero")
 }
 
-/** Copia la voce corrente in [out]; oltre [massimo] byte l'archivio non è valido. */
-private fun InputStream.copiaAlPiù(out: OutputStream, massimo: Long) {
+/** Un errore di lettura dello ZIP vuol dire file rovinato o non ZIP. */
+private inline fun <T> leggendo(blocco: () -> T): T =
+    try { blocco() } catch (e: IOException) { throw ArchivioNonValido("File illeggibile o non ZIP", e) }
+
+/** I byte della voce corrente; oltre [massimo] l'archivio non è valido. */
+private fun InputStream.leggiAlPiù(massimo: Int): ByteArray {
+    val out = ByteArrayOutputStream()
     val buffer = ByteArray(8192)
-    var totale = 0L
     while (true) {
         val letti = read(buffer)
-        if (letti < 0) return
-        totale += letti
-        if (totale > massimo) throw ArchivioNonValido("Voce dello ZIP troppo grande")
+        if (letti < 0) return out.toByteArray()
+        if (out.size() + letti > massimo) throw ArchivioNonValido("ZIP troppo grande")
         out.write(buffer, 0, letti)
     }
 }
