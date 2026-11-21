@@ -13,7 +13,9 @@ import androidx.room.Relation
 import androidx.room.Transaction
 import com.guardaroba.motore.Giudizio
 import com.guardaroba.motore.Outfit
+import com.guardaroba.motore.Perché
 import com.guardaroba.motore.giudica
+import com.guardaroba.motore.perché
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -53,7 +55,12 @@ data class PreferitoConCapi(
     val capi: List<Capo>,
 ) {
     /** Il Giudizio del Motore sui Capi come sono adesso: dopo una modifica il Preferito può non essere più un Outfit valido. */
-    fun giudizio(): Giudizio = giudica(Outfit(capi.map { it.perMotore() }))
+    fun giudizio(): Giudizio = giudica(outfit())
+
+    /** La Spiegazione in parole semplici sui Capi di adesso; null se non è più valido. */
+    fun perché(): Perché? = perché(outfit())
+
+    private fun outfit() = Outfit(capi.map { it.perMotore() })
 }
 
 @Dao

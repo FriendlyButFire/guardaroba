@@ -1,5 +1,14 @@
 package com.guardaroba.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TopAppBar
+import androidx.compose.ui.text.style.TextOverflow
+import com.guardaroba.archivio.Capo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -34,10 +43,25 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.guardaroba.archivio.PreferitoConCapi
 import com.guardaroba.motore.Giudizio
 
+/** I Preferiti; [schedaCapo] mostra la scheda di un Capo aperta da un Preferito e chiama la sua funzione quando si chiude. */
 @Composable
-fun PreferitiScreen(vm: PreferitiViewModel = viewModel(factory = PreferitiViewModel.Factory)) {
+fun PreferitiScreen(
+    vm: PreferitiViewModel = viewModel(factory = PreferitiViewModel.Factory),
+    schedaCapo: @Composable (id: Long, chiudi: () -> Unit) -> Unit,
+) {
     val preferiti by vm.preferiti.collectAsStateWithLifecycle()
     val lista = preferiti ?: return
+    // Il Preferito aperto in grande e il Capo aperto da lì; il Preferito resta aperto mentre la scheda del Capo è in vista.
+    var aperto by rememberSaveable { mutableStateOf<Long?>(null) }
+    var capoAperto by rememberSaveable { mutableStateOf<Long?>(null) }
+    capoAperto?.let { id ->
+        schedaCapo(id) { capoAperto = null }
+        return
+    }
+    lista.find { it.preferito.id == aperto }?.let { p ->
+        VistaPreferito(p, onIndietro = { aperto = null }, onApriCapo = { capoAperto = it.id })
+        return
+    }
     // Il Preferito di cui è aperta la finestra di rinomina o di eliminazione.
     var daRinominare by rememberSaveable { mutableStateOf<Long?>(null) }
     var daEliminare by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -53,7 +77,7 @@ fun PreferitiScreen(vm: PreferitiViewModel = viewModel(factory = PreferitiViewMo
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(lista, key = { it.preferito.id }) { p ->
-                SchedaPreferito(p, onRinomina = { daRinominare = p.preferito.id }, onElimina = { daEliminare = p.preferito.id })
+                SchedaPreferito(p, onApri = { aperto = p.preferito.id }, onRinomina = { daRinominare = p.preferito.id }, onElimina = { daEliminare = p.preferito.id })
             }
         }
     }
@@ -74,8 +98,8 @@ fun PreferitiScreen(vm: PreferitiViewModel = viewModel(factory = PreferitiViewMo
 }
 
 @Composable
-private fun SchedaPreferito(preferito: PreferitoConCapi, onRinomina: () -> Unit, onElimina: () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
+private fun SchedaPreferito(preferito: PreferitoConCapi, onApri: () -> Unit, onRinomina: () -> Unit, onElimina: () -> Unit) {
+    Card(onApri, Modifier.fillMaxWidth()) {
         Column(Modifier.padding(8.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -97,6 +121,37 @@ private fun SchedaPreferito(preferito: PreferitoConCapi, onRinomina: () -> Unit,
                 is Giudizio.NonValido -> Text(
                     "Non più valido: ${giudizio.ragione}",
                     Modifier.padding(8.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
+    }
+}
+
+/** Il Preferito in grande, composto come in Outfit e giudicato con i Capi di adesso (ADR-0011, ADR-0014); toccare un riquadro apre il Capo. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VistaPreferito(preferito: PreferitoConCapi, onIndietro: () -> Unit, onApriCapo: (Capo) -> Unit) {
+    BackHandler(onBack = onIndietro)
+    Column(Modifier.fillMaxSize()) {
+        TopAppBar(
+            title = { Text(preferito.preferito.nome ?: "Senza nome", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            navigationIcon = {
+                IconButton(onClick = onIndietro) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro") }
+            },
+            windowInsets = WindowInsets(0),
+        )
+        Column(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            OutfitVerticale(preferito.capi, onApri = onApriCapo)
+            when (val giudizio = preferito.giudizio()) {
+                is Giudizio.Valido -> Spiegazione(preferito.perché(), giudizio.spiegazione)
+                is Giudizio.NonValido -> Text(
+                    "Non più valido: ${giudizio.ragione}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.error,
                 )

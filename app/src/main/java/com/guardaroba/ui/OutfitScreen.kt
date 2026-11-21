@@ -59,13 +59,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.guardaroba.archivio.Capo
 import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Consiglio
 import com.guardaroba.motore.Esito
-import com.guardaroba.motore.Motivo
 import com.guardaroba.motore.Stagione
-import com.guardaroba.motore.colore
 import com.guardaroba.motore.perché
 
 @Composable
@@ -126,14 +123,7 @@ fun OutfitScreen(vm: OutfitViewModel) {
                         is Esito.Proposta -> {
                             // mapNotNull: un Capo eliminato dopo la Proposta sparisce dalla miniatura
                             OutfitVerticale(esito.outfit.capi.mapNotNull { stato?.capi?.get(it.id) })
-                            // La frase dice perché funziona; la regola resta come etichetta per chi vuole impararla.
-                            val perché = perché(esito.outfit)
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(perché?.frase ?: esito.spiegazione, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-                                perché?.let {
-                                    Text(it.regola.maiuscola(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
+                            Spiegazione(perché(esito.outfit), esito.spiegazione)
                             // Il nome si chiede solo dopo Salva; una Proposta nuova chiude la finestra.
                             var chiediNome by rememberSaveable(esito.outfit.idCapi) { mutableStateOf(false) }
                             val traIPreferiti = esito.outfit.idCapi in preferiti
@@ -179,24 +169,6 @@ fun OutfitScreen(vm: OutfitViewModel) {
         }
     }
 }
-
-/** L'Outfit in piedi come un corpo: Sopra, Sotto (o Intero) e Scarpe in colonna; Capospalla e Accessori accanto, dall'altezza delle spalle. */
-@Composable
-private fun OutfitVerticale(capi: List<Capo>) {
-    val (accanto, corpo) = capi.sortedBy { it.categoria }
-        .partition { it.categoria == Categoria.CAPOSPALLA || it.categoria == Categoria.ACCESSORI }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Column { corpo.forEach { RiquadroCapo(it, Modifier.width(144.dp).clearAndSetSemantics { contentDescription = descrizione(it) }) } }
-        if (accanto.isNotEmpty()) {
-            Column { accanto.forEach { RiquadroCapo(it, Modifier.width(96.dp).clearAndSetSemantics { contentDescription = descrizione(it) }) } }
-        }
-    }
-}
-
-/** Il riquadro detto a voce, Categoria compresa: "Sopra: t-shirt, rosso e bianco, a righe". */
-private fun descrizione(capo: Capo): String =
-    "${capo.categoria.nome}: ${capo.tipo}, " + listOfNotNull(capo.colorePrincipale, capo.coloreSecondario).joinToString(" e ") { colore(it).nome } +
-        (if (capo.motivo != Motivo.TINTA_UNITA) ", a ${capo.motivo.nome}" else "")
 
 /** I Colori della Palette che starebbero bene col Capo di partenza, raggruppati per regola; chiusi finché non si aprono. */
 @Composable

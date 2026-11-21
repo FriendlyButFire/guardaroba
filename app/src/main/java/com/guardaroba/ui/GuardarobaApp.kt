@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.guardaroba.archivio.Capo
 
 enum class Sezione(val titolo: String, val icona: ImageVector) {
     GUARDAROBA("Guardaroba", Icons.AutoMirrored.Filled.List),
@@ -36,6 +37,7 @@ enum class Sezione(val titolo: String, val icona: ImageVector) {
 fun GuardarobaApp() {
     var sezione by rememberSaveable { mutableStateOf(Sezione.GUARDAROBA) }
     val outfit: OutfitViewModel = viewModel(factory = OutfitViewModel.Factory)
+    val partiDa = { capo: Capo -> outfit.partiDa(capo.id); sezione = Sezione.OUTFIT }
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -52,9 +54,10 @@ fun GuardarobaApp() {
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
             when (sezione) {
-                Sezione.GUARDAROBA -> GuardarobaScreen(onPartiDa = { outfit.partiDa(it.id); sezione = Sezione.OUTFIT })
+                Sezione.GUARDAROBA -> GuardarobaScreen(onPartiDa = partiDa)
                 Sezione.OUTFIT -> OutfitScreen(outfit)
-                Sezione.PREFERITI -> PreferitiScreen()
+                // La scheda di un Capo aperta da un Preferito: chiusa, si torna al Preferito (ADR-0014).
+                Sezione.PREFERITI -> PreferitiScreen { id, chiudi -> GuardarobaScreen(onPartiDa = partiDa, capoAperto = id, onChiusa = chiudi) }
                 // Dopo un Importa gli id indicano altri Capi: la sessione Outfit riparte da zero (ADR-0010).
                 Sezione.IMPOSTAZIONI -> ImpostazioniScreen(onImportato = { outfit.partiDa(null) })
             }

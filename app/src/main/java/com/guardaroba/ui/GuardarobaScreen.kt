@@ -117,10 +117,13 @@ private const val NUOVO = 0L // l'id di un Capo non ancora salvato
 fun GuardarobaScreen(
     onPartiDa: (Capo) -> Unit,
     vm: GuardarobaViewModel = viewModel(factory = GuardarobaViewModel.Factory),
+    capoAperto: Long? = null,
+    onChiusa: (() -> Unit)? = null,
 ) {
     val capi by vm.capi.collectAsStateWithLifecycle()
     // Id del Capo aperto nella scheda: null = chiusa, NUOVO = Capo nuovo.
-    var aperto by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Con [onChiusa] (scheda aperta da Preferiti, ADR-0014) chiudere la scheda torna da chi l'ha aperta invece che alla griglia.
+    var aperto by rememberSaveable { mutableStateOf(capoAperto) }
     // Quanti Preferiti contengono il Capo aperto, mentre è aperta la conferma di eliminazione; null = nessuna conferma.
     var preferitiDaEliminare by rememberSaveable { mutableStateOf<Int?>(null) }
     var filtriAperti by rememberSaveable { mutableStateOf(false) }
@@ -130,7 +133,9 @@ fun GuardarobaScreen(
     var scheda by rememberSaveable { mutableIntStateOf(0) }
     val avvisi = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    fun apri(id: Long?, da: Long? = null) { aperto = id; modello = da; scheda++ }
+    fun apri(id: Long?, da: Long? = null) {
+        if (id == null && onChiusa != null) onChiusa() else { aperto = id; modello = da; scheda++ }
+    }
 
     aperto?.let { id ->
         val iniziale = capi?.find { it.id == id }

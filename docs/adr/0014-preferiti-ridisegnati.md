@@ -1,0 +1,6 @@
+# Preferiti ridisegnati: il Preferito si apre in grande
+
+La critica Impeccable del 2026-11-21 sulla schermata Preferiti, approvata dall'utente, ha fissato il grosso: toccare un Preferito lo apre in grande dentro Preferiti, con la composizione di Outfit ([[0012-schermata-outfit-ridisegnata]]) e il giudizio sui Capi di adesso ([[0011-preferito-giudicato-con-i-capi-di-adesso]]); toccare un riquadro apre la scheda del Capo. Qui ci sono le scelte di dettaglio prese durante la costruzione.
+
+- **La vista grande è quella di Outfit.** `OutfitVerticale`, `descrizione` e `Spiegazione` stanno in `OutfitVerticale.kt`, usati da tutte e due le schermate. In alto una barra con la freccia indietro e il nome del Preferito ("Senza nome" se non ce l'ha); anche il tasto Indietro di sistema torna alla lista.
+- **La scheda del Capo è quella del Guardaroba**, con tutto il suo menu ⋮ ([[0013-guardaroba-e-scheda-capo-ridisegnati]]). Chiusa (Salva, ✕, Indietro, Elimina) si torna al Preferito aperto, non alla griglia del Guardaroba: chi la apre da qui vuole vedere se il Preferito torna valido. "Parti da questo capo" porta in Outfit come sempre. Eliminare il Capo elimina anche il Preferito (la conferma lo dice già), e si torna alla lista. Cambiare sezione dalla barra in basso chiude vista grande e scheda, come nel Guardaroba.
