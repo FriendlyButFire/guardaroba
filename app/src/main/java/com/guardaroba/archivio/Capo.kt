@@ -58,14 +58,15 @@ interface CapoDao {
     /** Elimina il Capo e i Preferiti che lo contengono; ritorna la foto che il Capo usava. */
     @Transaction
     suspend fun eliminaConPreferiti(id: Long): String? = percorsoFoto(id).also {
-        eliminaPreferitiCon(id)
+        eliminaPreferitiConCapo(id)
         eliminaCapo(id)
     }
 
     // La cascata su preferito_capo.capoId toglierebbe solo la riga: il Preferito va eliminato qui, prima del Capo.
     @Query("DELETE FROM preferito WHERE id IN (SELECT preferitoId FROM preferito_capo WHERE capoId = :id)")
-    suspend fun eliminaPreferitiCon(id: Long)
+    suspend fun eliminaPreferitiConCapo(id: Long)
 
+    // Solo via [elimina]: da sola lascerebbe i Preferiti con un Capo in meno e la foto orfana.
     @Query("DELETE FROM capo WHERE id = :id")
     suspend fun eliminaCapo(id: Long)
 }

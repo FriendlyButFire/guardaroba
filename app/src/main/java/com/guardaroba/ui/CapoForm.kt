@@ -76,7 +76,7 @@ import java.io.IOException
  * [onElimina] chiede di eliminare [iniziale]: la conferma la chiede chi chiama.
  */
 @Composable
-fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = null, onElimina: () -> Unit = {}) {
+fun CapoForm(onSalva: (Capo) -> Unit, onAnnulla: () -> Unit, iniziale: Capo? = null, onElimina: () -> Unit) {
     var categoria by rememberSaveable { mutableStateOf(iniziale?.categoria) }
     var tipo by rememberSaveable { mutableStateOf(iniziale?.tipo) }
     var colorePrincipale by rememberSaveable { mutableStateOf(iniziale?.colorePrincipale) }

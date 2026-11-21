@@ -24,7 +24,7 @@ data class Preferito(
 
 /**
  * Un Capo di un Preferito. Le foreign key in cascata tolgono la riga quando sparisce il Preferito o il Capo;
- * il Preferito stesso lo elimina [CapoDao.elimina], che passa sempre prima di cancellare un Capo.
+ * il Preferito stesso lo elimina [CapoDao.elimina]: un Capo va eliminato solo da lì.
  */
 @Entity(
     tableName = "preferito_capo",

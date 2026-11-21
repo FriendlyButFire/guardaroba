@@ -146,7 +146,7 @@ private fun ConfermaEliminazione(quanti: Int, onConferma: () -> Unit, onAnnulla:
         text = {
             Text(
                 when (quanti) {
-                    0 -> "Il capo e la sua foto spariranno dal Guardaroba."
+                    0 -> "Il capo sparirà dal Guardaroba."
                     1 -> "Il capo compare in 1 Preferito: verrà eliminato anche quello."
                     else -> "Il capo compare in $quanti Preferiti: verranno eliminati anche quelli."
                 },
