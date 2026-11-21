@@ -1,13 +1,16 @@
 package com.guardaroba.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -17,14 +20,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -80,14 +89,20 @@ fun OutfitScreen(vm: OutfitViewModel) {
                     // mapNotNull: un Capo eliminato dopo la Proposta sparisce dalla miniatura
                     OutfitVerticale(esito.outfit.capi.mapNotNull { stato.capi[it.id] })
                     Text(esito.spiegazione, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-                    // Una Proposta nuova riparte con il nome vuoto.
-                    var nome by rememberSaveable(esito.outfit.idCapi) { mutableStateOf("") }
+                    // Il nome si chiede solo dopo Salva; una Proposta nuova chiude la finestra.
+                    var chiediNome by rememberSaveable(esito.outfit.idCapi) { mutableStateOf(false) }
                     val traIPreferiti = esito.outfit.idCapi in preferiti
-                    if (!traIPreferiti) {
-                        OutlinedTextField(nome, { nome = it }, label = { Text("Nome (opzionale)") }, singleLine = true)
-                    }
-                    OutlinedButton(onClick = { vm.salva(nome) }, enabled = !traIPreferiti) {
+                    FilledTonalButton(onClick = { chiediNome = true }, enabled = !traIPreferiti) {
+                        Icon(
+                            if (traIPreferiti) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = null,
+                            modifier = Modifier.size(ButtonDefaults.IconSize),
+                        )
+                        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
                         Text(if (traIPreferiti) "Tra i Preferiti" else "Salva")
+                    }
+                    if (chiediNome && !traIPreferiti) {
+                        FinestraNome("Salva tra i Preferiti", "", onChiudi = { chiediNome = false }) { vm.salva(it) }
                     }
                 }
                 is Esito.MancaCategoria ->
@@ -119,21 +134,32 @@ private fun OutfitVerticale(capi: List<Capo>) {
     }
 }
 
-/** I Colori della Palette che starebbero bene col Capo di partenza, raggruppati per regola. */
+/** I Colori della Palette che starebbero bene col Capo di partenza, raggruppati per regola; chiusi finché non si aprono. */
 @Composable
 private fun ColoriConsigliati(consigliati: List<Consiglio>) {
+    var aperti by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Colori consigliati", style = MaterialTheme.typography.titleSmall)
-        consigliati.groupBy { it.regola }.forEach { (regola, gruppo) ->
-            Text(regola, style = MaterialTheme.typography.labelLarge)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                gruppo.forEach { (colore) ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(
-                            Modifier.size(20.dp).background(colore.campione(), CircleShape)
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
-                        )
-                        Text(colore.nome, style = MaterialTheme.typography.bodySmall)
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClickLabel = if (aperti) "Chiudi" else "Apri") { aperti = !aperti },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Colori consigliati", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            Icon(if (aperti) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = null)
+        }
+        AnimatedVisibility(aperti) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                consigliati.groupBy { it.regola }.forEach { (regola, gruppo) ->
+                    Text(regola, style = MaterialTheme.typography.labelLarge)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        gruppo.forEach { (colore) ->
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Box(
+                                    Modifier.size(20.dp).background(colore.campione(), CircleShape)
+                                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+                                )
+                                Text(colore.nome, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
                     }
                 }
             }

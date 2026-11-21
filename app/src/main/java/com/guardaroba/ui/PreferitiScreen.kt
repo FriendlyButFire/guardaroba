@@ -58,7 +58,7 @@ fun PreferitiScreen(vm: PreferitiViewModel = viewModel(factory = PreferitiViewMo
         }
     }
     lista.find { it.preferito.id == daRinominare }?.let { p ->
-        FinestraRinomina(p.preferito.nome.orEmpty(), onChiudi = { daRinominare = null }) { vm.rinomina(p.preferito.id, it) }
+        FinestraNome("Rinomina", p.preferito.nome.orEmpty(), onChiudi = { daRinominare = null }) { vm.rinomina(p.preferito.id, it) }
     }
     lista.find { it.preferito.id == daEliminare }?.let { p ->
         AlertDialog(
@@ -105,13 +105,13 @@ private fun SchedaPreferito(preferito: PreferitoConCapi, onRinomina: () -> Unit,
     }
 }
 
-/** Chiede il nuovo nome; lasciarlo vuoto toglie il nome. */
+/** Chiede il nome di un Preferito (nuovo o da rinominare); lasciarlo vuoto vuol dire senza nome. */
 @Composable
-private fun FinestraRinomina(attuale: String, onChiudi: () -> Unit, onConferma: (String) -> Unit) {
+fun FinestraNome(titolo: String, attuale: String, onChiudi: () -> Unit, onConferma: (String) -> Unit) {
     var nome by rememberSaveable { mutableStateOf(attuale) }
     AlertDialog(
         onDismissRequest = onChiudi,
-        title = { Text("Rinomina") },
+        title = { Text(titolo) },
         text = { OutlinedTextField(nome, { nome = it }, label = { Text("Nome (opzionale)") }, singleLine = true) },
         confirmButton = { TextButton(onClick = { onConferma(nome); onChiudi() }) { Text("Salva") } },
         dismissButton = { TextButton(onClick = onChiudi) { Text("Annulla") } },
