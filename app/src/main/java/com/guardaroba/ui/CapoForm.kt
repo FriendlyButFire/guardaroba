@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts.TakePicture
 import androidx.core.content.FileProvider
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,8 +20,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,14 +36,22 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -54,6 +66,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -77,6 +91,7 @@ import java.io.IOException
  * mentre quella di [iniziale] la cancella [com.guardaroba.archivio.CapoDao.salva] solo a Salva.
  * [onElimina] chiede di eliminare [iniziale]: la conferma la chiede chi chiama. [onPartiDa] è "Parti da questo capo" su [iniziale].
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CapoForm(
     onSalva: (Capo) -> Unit,
@@ -129,113 +144,172 @@ fun CapoForm(
     }
     val galleria = rememberLauncherForActivityResult(PickVisualMedia()) { uri -> uri?.let { usa(it) } }
 
+
     BackHandler(onBack = onAnnulla)
 
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Text(if (iniziale == null) "Nuovo capo" else "Modifica capo", style = MaterialTheme.typography.headlineSmall)
-        // Parte dal Capo salvato: le modifiche non salvate qui si perdono, come con Annulla.
-        if (iniziale != null) Button(onClick = onPartiDa) { Text("Parti da questo capo") }
-
-        Sezione("Categoria") {
-            Categoria.entries.forEach {
-                FilterChip(
-                    selected = it == categoria,
-                    onClick = { if (it != categoria) { categoria = it; tipo = null } },
-                    label = { Text(it.nome) },
-                )
-            }
-        }
-        categoria?.let { scelta ->
-            Sezione("Tipo") {
-                scelta.tipi.forEach {
-                    FilterChip(selected = it == tipo, onClick = { tipo = it }, label = { Text(it) })
-                }
-            }
-        }
-
-        SceltaColore("Colore principale", colorePrincipale) { colorePrincipale = it }
-        // Il Colore secondario resta chiuso finché non serve; è già aperto se il Capo ne ha uno.
-        var conSecondario by rememberSaveable { mutableStateOf(coloreSecondario != null) }
-        if (conSecondario) {
-            // Toccare di nuovo il Colore scelto lo toglie; Rimuovi lo toglie e richiude la scelta.
-            SceltaColore("Colore secondario", coloreSecondario, onRimuovi = { coloreSecondario = null; conSecondario = false }) {
-                coloreSecondario = it.takeIf { it != coloreSecondario }
-            }
-        } else {
-            TextButton(onClick = { conSecondario = true }) {
-                Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
-                Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                Text("Aggiungi colore secondario")
-            }
-        }
-
-        Sezione("Motivo") {
-            Motivo.entries.forEach {
-                FilterChip(selected = it == motivo, onClick = { motivo = it }, label = { Text(it.nome) })
-            }
-        }
-        Sezione("Stagione") {
-            Stagione.entries.forEach {
-                FilterChip(selected = it == stagione, onClick = { stagione = it }, label = { Text(it.nome) })
-            }
-        }
-        Text("Foto (opzionale)", style = MaterialTheme.typography.titleMedium)
-        percorsoFoto?.let { FotoCapo(it, Modifier.size(160.dp).clip(RoundedCornerShape(12.dp))) }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(enabled = !inCompressione, onClick = {
-                try {
-                    fotocamera.launch(FileProvider.getUriForFile(context, "${context.packageName}.scatti", scatto))
-                } catch (_: ActivityNotFoundException) {
-                    Toast.makeText(context, "Nessuna app fotocamera", Toast.LENGTH_SHORT).show()
-                }
-            }) { Text("Scatta") }
-            OutlinedButton(enabled = !inCompressione, onClick = {
-                galleria.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
-            }) { Text("Dalla galleria") }
-            if (percorsoFoto != null) {
-                TextButton(enabled = !inCompressione, onClick = { scarta(percorsoFoto); percorsoFoto = null }) { Text("Rimuovi") }
-            }
-        }
-
-        OutlinedTextField(
-            value = taglia,
-            onValueChange = { taglia = it },
-            label = { Text("Taglia (opzionale)") },
-            placeholder = { Text("es. M, 42, W32 L34") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-            if (iniziale != null) {
-                TextButton(
-                    onClick = onElimina,
-                    enabled = !inCompressione,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                ) { Text("Elimina") }
-                Spacer(Modifier.weight(1f))
-            }
-            OutlinedButton(onClick = onAnnulla) { Text("Annulla") }
-            val c = categoria
-            val t = tipo
-            val p = colorePrincipale
-            Button(
-                enabled = c != null && t != null && p != null && !inCompressione,
-                onClick = {
-                    // copy() del Capo modificato tiene id, creatoIl e ogni campo che il form non mostra.
-                    salvato = true
-                    onSalva(
-                        (iniziale ?: Capo(categoria = c!!, tipo = t!!, colorePrincipale = p!!)).copy(
-                            categoria = c!!, tipo = t!!, colorePrincipale = p!!, coloreSecondario = coloreSecondario,
-                            motivo = motivo, stagione = stagione, taglia = taglia.trim().ifEmpty { null },
-                            percorsoFoto = percorsoFoto,
-                        ),
-                    )
+    val c = categoria
+    val t = tipo
+    val p = colorePrincipale
+    Scaffold(
+        contentWindowInsets = WindowInsets(0), // insets already applied by the outer Scaffold
+        topBar = {
+            TopAppBar(
+                title = { Text(if (iniziale == null) "Nuovo capo" else "Modifica capo") },
+                navigationIcon = {
+                    IconButton(onClick = onAnnulla) { Icon(Icons.Filled.Close, contentDescription = "Chiudi") }
                 },
-            ) { Text("Salva") }
+                actions = {
+                    TextButton(
+                        enabled = c != null && t != null && p != null && !inCompressione,
+                        onClick = {
+                            // copy() del Capo modificato tiene id, creatoIl e ogni campo che il form non mostra.
+                            salvato = true
+                            onSalva(
+                                (iniziale ?: Capo(categoria = c!!, tipo = t!!, colorePrincipale = p!!)).copy(
+                                    categoria = c!!, tipo = t!!, colorePrincipale = p!!, coloreSecondario = coloreSecondario,
+                                    motivo = motivo, stagione = stagione, taglia = taglia.trim().ifEmpty { null },
+                                    percorsoFoto = percorsoFoto,
+                                ),
+                            )
+                        },
+                    ) { Text("Salva") }
+                    if (iniziale != null) {
+                        AltreAzioni {
+                            // Parte dal Capo salvato: le modifiche non salvate qui si perdono, come chiudendo.
+                            DropdownMenuItem(text = { Text("Parti da questo capo") }, onClick = { it(); onPartiDa() })
+                            DropdownMenuItem(
+                                text = { Text("Elimina", color = MaterialTheme.colorScheme.error) },
+                                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                enabled = !inCompressione,
+                                onClick = { it(); onElimina() },
+                            )
+                        }
+                    }
+                },
+                windowInsets = WindowInsets(0),
+            )
+        },
+    ) { padding ->
+        Column(
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            AreaFoto(
+                percorsoFoto,
+                inCompressione,
+                onScatta = {
+                    try {
+                        fotocamera.launch(FileProvider.getUriForFile(context, "${context.packageName}.scatti", scatto))
+                    } catch (_: ActivityNotFoundException) {
+                        Toast.makeText(context, "Nessuna app fotocamera", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onGalleria = { galleria.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) },
+                onRimuovi = { scarta(percorsoFoto); percorsoFoto = null },
+            )
+
+            Sezione("Categoria") {
+                Categoria.entries.forEach {
+                    FilterChip(
+                        selected = it == categoria,
+                        onClick = { if (it != categoria) { categoria = it; tipo = null } },
+                        label = { Text(it.nome) },
+                    )
+                }
+            }
+            categoria?.let { scelta ->
+                Sezione("Tipo") {
+                    scelta.tipi.forEach {
+                        FilterChip(selected = it == tipo, onClick = { tipo = it }, label = { Text(it) })
+                    }
+                }
+            }
+
+            SceltaColore("Colore principale", colorePrincipale) { colorePrincipale = it }
+            // Il Colore secondario resta chiuso finché non serve; è già aperto se il Capo ne ha uno.
+            var conSecondario by rememberSaveable { mutableStateOf(coloreSecondario != null) }
+            if (conSecondario) {
+                // Toccare di nuovo il Colore scelto lo toglie; Rimuovi lo toglie e richiude la scelta.
+                SceltaColore("Colore secondario", coloreSecondario, onRimuovi = { coloreSecondario = null; conSecondario = false }) {
+                    coloreSecondario = it.takeIf { it != coloreSecondario }
+                }
+            } else {
+                TextButton(onClick = { conSecondario = true }) {
+                    Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
+                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                    Text("Aggiungi colore secondario")
+                }
+            }
+
+            Sezione("Motivo") {
+                Motivo.entries.forEach {
+                    FilterChip(selected = it == motivo, onClick = { motivo = it }, label = { Text(it.nome) })
+                }
+            }
+            Sezione("Stagione") {
+                Stagione.entries.forEach {
+                    FilterChip(selected = it == stagione, onClick = { stagione = it }, label = { Text(it.nome) })
+                }
+            }
+
+            OutlinedTextField(
+                value = taglia,
+                onValueChange = { taglia = it },
+                label = { Text("Taglia (opzionale)") },
+                placeholder = { Text("es. M, 42, W32 L34") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+/** Il menu ⋮ della barra in alto; ogni voce riceve la funzione che chiude il menu. */
+@Composable
+private fun AltreAzioni(voci: @Composable (chiudi: () -> Unit) -> Unit) {
+    var aperto by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { aperto = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Altre azioni") }
+        DropdownMenu(expanded = aperto, onDismissRequest = { aperto = false }) { voci { aperto = false } }
+    }
+}
+
+/** La foto in cima alla scheda, grande e toccabile: apre Scatta / Dalla galleria / Rimuovi foto. */
+@Composable
+private fun AreaFoto(
+    percorso: String?,
+    inCompressione: Boolean,
+    onScatta: () -> Unit,
+    onGalleria: () -> Unit,
+    onRimuovi: () -> Unit,
+) {
+    var menu by remember { mutableStateOf(false) }
+    val forma = RoundedCornerShape(16.dp)
+    Box {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .then(if (percorso != null) Modifier.aspectRatio(4f / 3f) else Modifier.height(160.dp))
+                .clip(forma)
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                .clickable(enabled = !inCompressione, onClickLabel = if (percorso != null) "Cambia foto" else "Aggiungi foto") { menu = true }
+                .semantics { if (percorso != null) contentDescription = "Foto del capo" },
+            contentAlignment = Alignment.Center,
+        ) {
+            when {
+                inCompressione -> CircularProgressIndicator()
+                percorso != null -> FotoCapo(percorso, Modifier.matchParentSize())
+                else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Aggiungi foto", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Opzionale", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(text = { Text("Scatta") }, onClick = { menu = false; onScatta() })
+            DropdownMenuItem(text = { Text("Dalla galleria") }, onClick = { menu = false; onGalleria() })
+            if (percorso != null) DropdownMenuItem(text = { Text("Rimuovi foto") }, onClick = { menu = false; onRimuovi() })
         }
     }
 }
