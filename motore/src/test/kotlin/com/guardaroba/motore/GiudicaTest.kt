@@ -61,4 +61,23 @@ class GiudicaTest {
         assertEquals(Giudizio.NonValido("Sotto e Intero insieme"), giudica(Outfit(listOf(sopra.copy(categoria = Categoria.INTERO), sotto, scarpe))))
         assertEquals(Giudizio.NonValido("manca Scarpe"), giudica(Outfit(listOf(sopra, sotto, scarpe.copy(categoria = Categoria.ACCESSORI)))))
     }
+
+    @Test
+    fun `il rimedio di un Outfit non più valido dipende dal tipo di ragione`() {
+        val sopra = capo(Categoria.SOPRA, "rosso")
+        val sotto = capo(Categoria.SOTTO, "giallo")
+        val scarpe = capo(Categoria.SCARPE, "nero")
+        fun rimedio(vararg capi: Capo) = rimedio((giudica(Outfit(capi.toList())) as Giudizio.NonValido).ragione)
+
+        assertEquals(
+            "Rimetti il Colore di prima al Capo cambiato, oppure scegline uno neutro come nero, bianco o denim: sta bene con qualsiasi colore.",
+            rimedio(sopra, sotto, scarpe),
+        )
+        assertEquals(
+            "Rimetti in tinta unita uno dei Capi: un Outfit regge un solo Capo a righe, quadri o fantasia.",
+            rimedio(sopra.copy(motivo = Motivo.RIGHE), sotto.copy(colorePrincipale = colore("nero"), motivo = Motivo.QUADRI), scarpe),
+        )
+        assertEquals("Rimetti la Categoria di prima al Capo cambiato.", rimedio(sopra, sotto.copy(categoria = Categoria.SOPRA), scarpe))
+        assertEquals("Rimetti la Categoria di prima al Capo cambiato.", rimedio(sopra, sotto))
+    }
 }

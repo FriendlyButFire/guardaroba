@@ -83,6 +83,20 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
 
 private const val TROPPI_MOTIVI = "più di un Capo non in tinta unita"
 
+/** La fine della ragione di [giudica] quando sono i Colori a non stare insieme. */
+const val NON_SI_ABBINANO = " non si abbinano"
+
+/**
+ * Cosa fare quando un Outfit già scelto (un Preferito) non è più valido per [ragione] di [giudica]: i suoi Capi sono quelli,
+ * quindi si rimette a posto il Capo cambiato invece di aggiungerne uno come in [nessunAbbinamento].
+ */
+fun rimedio(ragione: String): String = when {
+    ragione == TROPPI_MOTIVI -> "Rimetti in tinta unita uno dei Capi: un Outfit regge un solo Capo a righe, quadri o fantasia."
+    ragione.endsWith(NON_SI_ABBINANO) ->
+        "Rimetti il Colore di prima al Capo cambiato, oppure scegline uno neutro come nero, bianco o denim: sta bene con qualsiasi colore."
+    else -> "Rimetti la Categoria di prima al Capo cambiato." // le ragioni di composizione: Categorie doppie, escluse o mancanti
+}
+
 /**
  * Il perché di NessunAbbinamento tra le [ragioni] di [giudica] dei candidati, che in [proponi] sono sempre ben composti:
  * vince il tipo più frequente tra troppi Motivi e Colori che non si abbinano; per i Colori si nomina il primo Outfit.
@@ -123,7 +137,7 @@ fun giudica(outfit: Outfit): Giudizio {
     if (capi.count { it.categoria != Categoria.ACCESSORI && it.motivo != Motivo.TINTA_UNITA } > 1) return Giudizio.NonValido(TROPPI_MOTIVI)
     val colori = coloriPrincipali(outfit)
     val elenco = colori.joinToString(" + ") { it.nome }
-    return regola(colori)?.let { Giudizio.Valido("$elenco: $it") } ?: Giudizio.NonValido("$elenco non si abbinano")
+    return regola(colori)?.let { Giudizio.Valido("$elenco: $it") } ?: Giudizio.NonValido(elenco + NON_SI_ABBINANO)
 }
 
 /** I Colori principali distinti dell'Outfit in ordine di Categoria, senza quelli degli Accessori che non vincolano (ADR-0004). */

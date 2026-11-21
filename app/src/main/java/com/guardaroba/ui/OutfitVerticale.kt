@@ -1,10 +1,12 @@
 package com.guardaroba.ui
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -13,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.guardaroba.archivio.Capo
 import com.guardaroba.motore.Categoria
@@ -25,23 +26,33 @@ import com.guardaroba.motore.colore
 
 /**
  * L'Outfit in piedi come un corpo: Sopra, Sotto (o Intero) e Scarpe in colonna; Capospalla e Accessori accanto, dall'altezza delle spalle.
- * Con [onApri] toccare un riquadro apre quel Capo.
+ * Con [onApri] toccare un riquadro apre quel Capo; [cambiato] è il Capo da evidenziare (vedi [RiquadroOutfit]).
  */
 @Composable
-fun OutfitVerticale(capi: List<Capo>, onApri: ((Capo) -> Unit)? = null) {
+fun OutfitVerticale(capi: List<Capo>, onApri: ((Capo) -> Unit)? = null, cambiato: Capo? = null) {
     val (accanto, corpo) = capi.sortedBy { it.categoria }
         .partition { it.categoria == Categoria.CAPOSPALLA || it.categoria == Categoria.ACCESSORI }
-    @Composable
-    fun Riquadro(capo: Capo, larghezza: Dp) {
-        val tocco = onApri?.let { Modifier.clickable(onClickLabel = "Apri il capo") { it(capo) } } ?: Modifier
-        RiquadroCapo(capo, tocco.width(larghezza).clearAndSetSemantics { contentDescription = descrizione(capo) })
-    }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Column { corpo.forEach { Riquadro(it, 144.dp) } }
+        Column { corpo.forEach { RiquadroOutfit(it, Modifier.width(144.dp), it.id == cambiato?.id, onApri) } }
         if (accanto.isNotEmpty()) {
-            Column { accanto.forEach { Riquadro(it, 96.dp) } }
+            Column { accanto.forEach { RiquadroOutfit(it, Modifier.width(96.dp), it.id == cambiato?.id, onApri) } }
         }
     }
+}
+
+/**
+ * Il riquadro di un Capo dentro un Outfit, detto a voce con [descrizione]. [cambiato] lo cerchia nel colore d'errore: è il Capo
+ * che ha reso un Preferito non più valido.
+ */
+@Composable
+fun RiquadroOutfit(capo: Capo, modifier: Modifier, cambiato: Boolean = false, onApri: ((Capo) -> Unit)? = null) {
+    val anello = if (cambiato) Modifier.border(3.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(16.dp)) else Modifier
+    val tocco = onApri?.let { Modifier.clickable(onClickLabel = "Apri il capo") { it(capo) } } ?: Modifier
+    RiquadroCapo(
+        capo,
+        modifier.then(anello).then(tocco)
+            .clearAndSetSemantics { contentDescription = (if (cambiato) "Capo cambiato. " else "") + descrizione(capo) },
+    )
 }
 
 /** Il riquadro detto a voce, Categoria compresa: "Sopra: t-shirt, rosso e bianco, a righe". */

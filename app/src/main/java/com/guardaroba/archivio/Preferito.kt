@@ -11,9 +11,12 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Transaction
+import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Giudizio
+import com.guardaroba.motore.NON_SI_ABBINANO
 import com.guardaroba.motore.Outfit
 import com.guardaroba.motore.Perché
+import com.guardaroba.motore.colore
 import com.guardaroba.motore.giudica
 import com.guardaroba.motore.perché
 import kotlinx.coroutines.flow.Flow
@@ -59,6 +62,17 @@ data class PreferitoConCapi(
 
     /** La Spiegazione in parole semplici sui Capi di adesso; null se non è più valido. */
     fun perché(): Perché? = perché(outfit())
+
+    /**
+     * Il Capo che ha reso il Preferito non più valido, se si sa ed è uno solo. Si sa solo per i Colori: è l'unico Capo (Accessori esclusi,
+     * ADR-0004) con un Colore principale che non compare nella [Preferito.spiegazione] del salvataggio ("rosso + nero: …").
+     */
+    fun responsabile(): Capo? {
+        val ragione = (giudizio() as? Giudizio.NonValido)?.ragione ?: return null
+        if (!ragione.endsWith(NON_SI_ABBINANO)) return null
+        val salvati = preferito.spiegazione.substringBefore(":").split(" + ")
+        return capi.filter { it.categoria != Categoria.ACCESSORI && colore(it.colorePrincipale).nome !in salvati }.singleOrNull()
+    }
 
     private fun outfit() = Outfit(capi.map { it.perMotore() })
 }
