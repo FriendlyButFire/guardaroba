@@ -20,7 +20,7 @@ import java.util.zip.ZipInputStream
 class ArchivioNonValido(messaggio: String, causa: Throwable? = null) : Exception(messaggio, causa)
 
 /**
- * L'import di uno ZIP di [Esportazione] (ADR-0007), che sostituisce tutto il Guardaroba (ADR-0008).
+ * L'import di uno ZIP di [Esportazione] (ADR-0007), che sostituisce tutto il Guardaroba (ADR-0009).
  * Valida l'intero archivio prima di toccare i dati; un archivio non valido lancia [ArchivioNonValido].
  */
 class Importazione(private val db: GuardarobaDatabase, private val foto: Foto) {

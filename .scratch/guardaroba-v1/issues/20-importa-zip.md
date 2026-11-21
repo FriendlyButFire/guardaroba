@@ -14,5 +14,5 @@
 
 ## Comments
 
-- Le foto importate prendono un nome nuovo (UUID) e le vecchie si cancellano solo dopo il commit: nessuna uscita a metà lascia il database con foto mancanti (ADR-0008). Dopo l'import `percorsoFoto` cambia, il contenuto no.
+- Le foto importate prendono un nome nuovo (UUID) e le vecchie si cancellano solo dopo il commit: nessuna uscita a metà lascia il database con foto mancanti (ADR-0009). Dopo l'import `percorsoFoto` cambia, il contenuto no.
 - Da verificare a mano su emulatore/telefono: selettore, dialogo di conferma, messaggi d'errore.
