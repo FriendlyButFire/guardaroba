@@ -25,12 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.guardaroba.motore.Esito
 import com.guardaroba.motore.Stagione
 
 @Composable
-fun OutfitScreen(vm: OutfitViewModel = viewModel(factory = OutfitViewModel.Factory)) {
+fun OutfitScreen(vm: OutfitViewModel) {
     val stato = vm.stato
     val salvati by vm.salvati.collectAsStateWithLifecycle()
     Column(

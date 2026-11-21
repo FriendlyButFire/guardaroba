@@ -111,6 +111,11 @@ class PartiDaTest {
             setOf(setOf(sopra.id, sotto.id, scarpe.id, borsa.id), setOf(camicia.id, sotto.id, scarpe.id, borsa.id)),
             tutte(listOf(sopra, camicia, sotto, scarpe, borsa), borsa),
         )
+        val sciarpa = capo(Categoria.ACCESSORI, "nero", stagione = Stagione.INVERNALE)
+        assertEquals(
+            setOf(setOf(sopra.id, sotto.id, scarpe.id, sciarpa.id)),
+            tutte(listOf(sopra, sotto, scarpe, sciarpa), sciarpa, Stagione.ESTIVO),
+        )
     }
 
     @Test
