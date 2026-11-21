@@ -101,7 +101,7 @@ private fun regola(colori: List<Colore>): String? {
 }
 
 /** Un Colore della Palette che sta bene con un Capo, con la regola che li abbina (es. "complementari"). */
-data class Consiglio(val colore: Colore, val armonia: String)
+data class Consiglio(val colore: Colore, val regola: String)
 
 /** I Colori della Palette, in ordine di Palette, che starebbero bene col Colore principale del [capo], tranne lo stesso. */
 fun coloriConsigliati(capo: Capo): List<Consiglio> = (PALETTE - capo.colorePrincipale)

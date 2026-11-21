@@ -61,6 +61,9 @@ _Avoid_: Look, completo, combinazione
 Una regola di teoria dei colori che rende validi insieme i Colori principali non Neutri di un Outfit: monocromatico, analoghi o complementari.
 _Avoid_: Schema, combinazione
 
+**Colori consigliati**:
+I Colori della Palette che starebbero bene con il Colore principale di un Capo, ognuno con la regola che li abbina (es. "complementari").
+
 **Proposta**:
 Un Outfit suggerito dall'app, accompagnato dalla sua Spiegazione.
 _Avoid_: Suggerimento, risultato

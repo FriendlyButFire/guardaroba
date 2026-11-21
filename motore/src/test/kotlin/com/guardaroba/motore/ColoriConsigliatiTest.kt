@@ -7,7 +7,7 @@ class ColoriConsigliatiTest {
     private val neutri = PALETTE.filter { it.neutro }.map { it.nome }
 
     private fun consigliatiPer(id: String) =
-        coloriConsigliati(Capo(1, Categoria.SOPRA, colore(id))).map { it.colore.nome to it.armonia }
+        coloriConsigliati(Capo(1, Categoria.SOPRA, colore(id))).map { it.colore.nome to it.regola }
 
     @Test
     fun `per un Colore non neutro i consigliati sono i Neutri e i Colori in Armonia, in ordine di Palette`() {
