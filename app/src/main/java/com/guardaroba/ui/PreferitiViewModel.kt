@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.guardaroba.archivio.GuardarobaDatabase
+import com.guardaroba.archivio.PreferitoConCapi
 import com.guardaroba.archivio.PreferitoDao
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -18,8 +19,13 @@ class PreferitiViewModel(private val dao: PreferitoDao) : ViewModel() {
         viewModelScope.launch { dao.rinomina(id, nome) }
     }
 
-    fun elimina(id: Long) {
-        viewModelScope.launch { dao.elimina(id) }
+    fun elimina(preferito: PreferitoConCapi) {
+        viewModelScope.launch { dao.elimina(preferito.preferito.id) }
+    }
+
+    /** Annulla di "Preferito eliminato". */
+    fun ripristina(preferito: PreferitoConCapi) {
+        viewModelScope.launch { dao.ripristina(preferito) }
     }
 
     companion object {

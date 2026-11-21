@@ -300,12 +300,12 @@ fun CapoForm(
     }
 }
 
-/** Il menu ⋮ della barra in alto; ogni voce riceve la funzione che chiude il menu. */
+/** Il menu ⋮ (della barra in alto, o di una scheda); ogni voce riceve la funzione che chiude il menu. */
 @Composable
-private fun AltreAzioni(voci: @Composable (chiudi: () -> Unit) -> Unit) {
+fun AltreAzioni(descrizione: String = "Altre azioni", voci: @Composable (chiudi: () -> Unit) -> Unit) {
     var aperto by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { aperto = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Altre azioni") }
+        IconButton(onClick = { aperto = true }) { Icon(Icons.Filled.MoreVert, contentDescription = descrizione) }
         DropdownMenu(expanded = aperto, onDismissRequest = { aperto = false }) { voci { aperto = false } }
     }
 }

@@ -57,7 +57,9 @@ fun GuardarobaApp() {
                 Sezione.GUARDAROBA -> GuardarobaScreen(onPartiDa = partiDa)
                 Sezione.OUTFIT -> OutfitScreen(outfit)
                 // La scheda di un Capo aperta da un Preferito: chiusa, si torna al Preferito (ADR-0014).
-                Sezione.PREFERITI -> PreferitiScreen { id, chiudi -> GuardarobaScreen(onPartiDa = partiDa, capoAperto = id, onChiusa = chiudi) }
+                Sezione.PREFERITI -> PreferitiScreen(onVaiAOutfit = { sezione = Sezione.OUTFIT }) { id, chiudi ->
+                    GuardarobaScreen(onPartiDa = partiDa, capoAperto = id, onChiusa = chiudi)
+                }
                 // Dopo un Importa gli id indicano altri Capi: la sessione Outfit riparte da zero (ADR-0010).
                 Sezione.IMPOSTAZIONI -> ImpostazioniScreen(onImportato = { outfit.partiDa(null) })
             }

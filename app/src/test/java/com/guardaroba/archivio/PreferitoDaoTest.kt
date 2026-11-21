@@ -160,4 +160,44 @@ class PreferitoDaoTest {
         assertEquals(null, id)
         assertEquals(emptyList<PreferitoConCapi>(), preferiti)
     }
+
+    @Test
+    fun `un Preferito eliminato si ripristina con lo stesso id, nome e data`() = runBlocking {
+        val db = GuardarobaDatabase.apri(context)
+        val (a, b, c) = db.inserisci(sopra, sotto, scarpe).map { it.id }
+        val dao = db.preferitoDao()
+        dao.salva("neutri", setOf(a, b, c), nome = "colloquio")
+        val prima = dao.tutti().first().single()
+
+        dao.elimina(prima.preferito.id)
+        dao.ripristina(prima)
+        val dopo = dao.tutti().first().single()
+        db.close()
+
+        assertEquals(prima.preferito, dopo.preferito)
+        assertEquals(prima.capi.toSet(), dopo.capi.toSet())
+    }
+
+    @Test
+    fun `un Preferito non si ripristina se un suo Capo non c'è più o se l'Outfit è già tornato tra i Preferiti`() = runBlocking {
+        val db = GuardarobaDatabase.apri(context)
+        val (a, b, c, d) = db.inserisci(sopra, sotto, scarpe, altreScarpe).map { it.id }
+        val dao = db.preferitoDao()
+        dao.salva("neutri", setOf(a, b, c))
+        dao.salva("neutri", setOf(a, b, d))
+        val tutti = dao.tutti().first()
+        val conC = tutti.single { p -> p.capi.any { it.id == c } }
+        val conD = tutti.single { p -> p.capi.any { it.id == d } }
+
+        dao.elimina(conC.preferito.id)
+        db.capoDao().eliminaConPreferiti(c)
+        dao.ripristina(conC)
+        dao.elimina(conD.preferito.id)
+        val risalvato = dao.salva("neutri", setOf(a, b, d))
+        dao.ripristina(conD)
+        val preferiti = dao.tutti().first()
+        db.close()
+
+        assertEquals(listOf(risalvato), preferiti.map { it.preferito.id })
+    }
 }

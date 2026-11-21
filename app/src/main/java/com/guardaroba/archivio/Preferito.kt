@@ -109,6 +109,18 @@ interface PreferitoDao {
     @Query("DELETE FROM preferito WHERE id = :id")
     suspend fun elimina(id: Long)
 
+    /**
+     * Rimette un Preferito appena eliminato (Annulla), con lo stesso id, nome e data. Niente se nel frattempo uno dei suoi Capi
+     * è stato eliminato o lo stesso Outfit è tornato tra i Preferiti.
+     */
+    @Transaction
+    suspend fun ripristina(eliminato: PreferitoConCapi) {
+        val idCapi = eliminato.capi.map { it.id }.toSet()
+        if (quantiCapi(idCapi) != idCapi.size || conICapi(idCapi, idCapi.size) != null) return
+        inserisciPreferiti(listOf(eliminato.preferito))
+        inserisci(idCapi.map { PreferitoCapo(eliminato.preferito.id, it) })
+    }
+
     /** Il Preferito fatto esattamente di questi Capi, né uno di più né uno di meno. */
     @Query(
         "SELECT preferitoId FROM preferito_capo GROUP BY preferitoId " +
@@ -119,7 +131,7 @@ interface PreferitoDao {
     @Insert
     suspend fun inserisci(preferito: Preferito): Long
 
-    /** Solo per [Importazione]: i Preferiti con i loro id, senza il controllo dei doppioni di [salva]. */
+    /** Per [Importazione] e [ripristina]: i Preferiti con i loro id, senza il controllo dei doppioni di [salva]. */
     @Insert
     suspend fun inserisciPreferiti(preferiti: List<Preferito>)
 

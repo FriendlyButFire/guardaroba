@@ -17,8 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -44,85 +42,133 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.guardaroba.archivio.Capo
 import com.guardaroba.archivio.PreferitoConCapi
 import com.guardaroba.motore.Giudizio
 import com.guardaroba.motore.rimedio
 
-/** I Preferiti; [schedaCapo] mostra la scheda di un Capo aperta da un Preferito e chiama la sua funzione quando si chiude. */
+/**
+ * I Preferiti; [onVaiAOutfit] porta alla sezione Outfit dallo stato vuoto, [schedaCapo] mostra la scheda di un Capo aperta da un
+ * Preferito e chiama la sua funzione quando si chiude.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PreferitiScreen(
+    onVaiAOutfit: () -> Unit,
     vm: PreferitiViewModel = viewModel(factory = PreferitiViewModel.Factory),
     schedaCapo: @Composable (id: Long, chiudi: () -> Unit) -> Unit,
 ) {
     val preferiti by vm.preferiti.collectAsStateWithLifecycle()
-    val lista = preferiti ?: return
     // Il Preferito aperto in grande e il Capo aperto da lì; il Preferito resta aperto mentre la scheda del Capo è in vista.
     var aperto by rememberSaveable { mutableStateOf<Long?>(null) }
     var capoAperto by rememberSaveable { mutableStateOf<Long?>(null) }
+    var daRinominare by rememberSaveable { mutableStateOf<Long?>(null) } // il Preferito con la finestra Rinomina aperta
+    val avvisi = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     capoAperto?.let { id ->
         schedaCapo(id) { capoAperto = null }
         return
     }
-    lista.find { it.preferito.id == aperto }?.let { p ->
+    val lista = preferiti
+    lista?.find { it.preferito.id == aperto }?.let { p ->
         VistaPreferito(p, onIndietro = { aperto = null }, onApriCapo = { capoAperto = it.id })
         return
     }
-    // Il Preferito di cui è aperta la finestra di rinomina o di eliminazione.
-    var daRinominare by rememberSaveable { mutableStateOf<Long?>(null) }
-    var daEliminare by rememberSaveable { mutableStateOf<Long?>(null) }
-    when {
-        lista.isEmpty() -> Text(
-            "Nessun Preferito.\nSalva una Proposta dalla sezione Outfit.",
-            Modifier.padding(24.dp),
-            textAlign = TextAlign.Center,
-        )
-        else -> LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            items(lista, key = { it.preferito.id }) { p ->
-                SchedaPreferito(
-                    p,
-                    onApri = { aperto = p.preferito.id },
-                    onRinomina = { daRinominare = p.preferito.id },
-                    onElimina = { daEliminare = p.preferito.id },
-                )
+    // Eliminare si annulla dallo snackbar: niente finestra di conferma (ADR-0014).
+    fun elimina(p: PreferitoConCapi) {
+        vm.elimina(p)
+        scope.launch {
+            avvisi.currentSnackbarData?.dismiss()
+            val esito = avvisi.showSnackbar("Preferito eliminato", actionLabel = "Annulla", duration = SnackbarDuration.Long)
+            if (esito == SnackbarResult.ActionPerformed) vm.ripristina(p)
+        }
+    }
+    Scaffold(
+        contentWindowInsets = WindowInsets(0), // insets already applied by the outer Scaffold
+        topBar = { TopAppBar(title = { Text("Preferiti") }, windowInsets = WindowInsets(0)) },
+        snackbarHost = { SnackbarHost(avvisi) },
+    ) { padding ->
+        when {
+            // Ancora in caricamento: un indicatore, non lo stato vuoto a sproposito (come nel Guardaroba, ADR-0013).
+            lista == null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            lista.isEmpty() -> Column(
+                Modifier.fillMaxSize().padding(padding).padding(32.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(Icons.Filled.FavoriteBorder, contentDescription = null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Nessun Preferito.\nSalva da Outfit le Proposte che ti piacciono.", textAlign = TextAlign.Center)
+                FilledTonalButton(onClick = onVaiAOutfit) { Text("Vai a Outfit") }
+            }
+            else -> LazyColumn(
+                Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(lista, key = { it.preferito.id }) { p ->
+                    SchedaPreferito(
+                        p,
+                        onApri = { aperto = p.preferito.id },
+                        onRinomina = { daRinominare = p.preferito.id },
+                        onElimina = { elimina(p) },
+                    )
+                }
             }
         }
     }
-    lista.find { it.preferito.id == daRinominare }?.let { p ->
-        FinestraNome("Rinomina", p.preferito.nome.orEmpty(), onChiudi = { daRinominare = null }) { vm.rinomina(p.preferito.id, it) }
-    }
-    lista.find { it.preferito.id == daEliminare }?.let { p ->
-        AlertDialog(
-            onDismissRequest = { daEliminare = null },
-            title = { Text("Eliminare il Preferito?") },
-            text = { Text("${p.preferito.nome ?: "L'Outfit"} sparirà dai Preferiti. I Capi restano nel Guardaroba.") },
-            confirmButton = {
-                TextButton(onClick = { vm.elimina(p.preferito.id); daEliminare = null }) { Text("Elimina") }
-            },
-            dismissButton = { TextButton(onClick = { daEliminare = null }) { Text("Annulla") } },
-        )
+    lista?.find { it.preferito.id == daRinominare }?.let { p ->
+        FinestraNome("Rinomina", p.preferito.nome.orEmpty(), onChiudi = { daRinominare = null }) {
+            vm.rinomina(p.preferito.id, it)
+            scope.launch { avvisi.showSnackbar("Preferito rinominato") }
+        }
     }
 }
 
 @Composable
 private fun SchedaPreferito(preferito: PreferitoConCapi, onApri: () -> Unit, onRinomina: () -> Unit, onElimina: () -> Unit) {
+    val nome = preferito.preferito.nome ?: "Senza nome"
     Card(onApri, Modifier.fillMaxWidth()) {
         Column(Modifier.padding(8.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    preferito.preferito.nome ?: "Senza nome",
+                    nome,
                     Modifier.weight(1f).padding(horizontal = 8.dp),
                     style = MaterialTheme.typography.titleMedium,
                     color = if (preferito.preferito.nome == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                 )
-                IconButton(onClick = onRinomina) { Icon(Icons.Filled.Edit, contentDescription = "Rinomina") }
-                IconButton(onClick = onElimina) { Icon(Icons.Filled.Delete, contentDescription = "Elimina") }
+                // Nel menu ⋮ come nella scheda Capo (ADR-0013); a voce ogni azione dice di quale Preferito si tratta.
+                AltreAzioni("Altre azioni per $nome") { chiudi ->
+                    DropdownMenuItem(
+                        text = { Text("Rinomina") },
+                        onClick = { chiudi(); onRinomina() },
+                        modifier = Modifier.semantics { contentDescription = "Rinomina $nome" },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Elimina", color = MaterialTheme.colorScheme.error) },
+                        onClick = { chiudi(); onElimina() },
+                        modifier = Modifier.semantics { contentDescription = "Elimina $nome" },
+                    )
+                }
             }
             val cambiato = preferito.responsabile()
             Row(Modifier.fillMaxWidth()) {
@@ -212,12 +258,24 @@ private fun NonPiùValido(ragione: String, inGrande: Boolean, cambiato: Capo? = 
 /** Chiede il nome di un Preferito (nuovo o da rinominare); lasciarlo vuoto vuol dire senza nome. */
 @Composable
 fun FinestraNome(titolo: String, attuale: String, onChiudi: () -> Unit, onConferma: (String) -> Unit) {
-    var nome by rememberSaveable { mutableStateOf(attuale) }
+    // Il campo prende il fuoco con il nome attuale tutto selezionato: si riscrive senza cancellarlo a mano.
+    var nome by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue(attuale, TextRange(0, attuale.length))) }
+    val fuoco = remember { FocusRequester() }
+    LaunchedEffect(Unit) { fuoco.requestFocus() }
     AlertDialog(
         onDismissRequest = onChiudi,
         title = { Text(titolo) },
-        text = { OutlinedTextField(nome, { nome = it }, label = { Text("Nome (opzionale)") }, singleLine = true) },
-        confirmButton = { TextButton(onClick = { onConferma(nome); onChiudi() }) { Text("Salva") } },
+        text = {
+            OutlinedTextField(
+                nome,
+                { nome = it },
+                Modifier.focusRequester(fuoco),
+                label = { Text("Nome (opzionale)") },
+                placeholder = { Text("Senza nome") },
+                singleLine = true,
+            )
+        },
+        confirmButton = { TextButton(onClick = { onConferma(nome.text); onChiudi() }) { Text("Salva") } },
         dismissButton = { TextButton(onClick = onChiudi) { Text("Annulla") } },
     )
 }
