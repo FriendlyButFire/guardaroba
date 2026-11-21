@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -156,9 +157,19 @@ fun CapoForm(
         }
 
         SceltaColore("Colore principale", colorePrincipale) { colorePrincipale = it }
-        // Toccare di nuovo il Colore secondario scelto lo toglie.
-        SceltaColore("Colore secondario (opzionale)", coloreSecondario) {
-            coloreSecondario = it.takeIf { it != coloreSecondario }
+        // Il Colore secondario resta chiuso finché non serve; è già aperto se il Capo ne ha uno.
+        var conSecondario by rememberSaveable { mutableStateOf(coloreSecondario != null) }
+        if (conSecondario) {
+            // Toccare di nuovo il Colore scelto lo toglie; Rimuovi lo toglie e richiude la scelta.
+            SceltaColore("Colore secondario", coloreSecondario, onRimuovi = { coloreSecondario = null; conSecondario = false }) {
+                coloreSecondario = it.takeIf { it != coloreSecondario }
+            }
+        } else {
+            TextButton(onClick = { conSecondario = true }) {
+                Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
+                Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                Text("Aggiungi colore secondario")
+            }
         }
 
         Sezione("Motivo") {
@@ -230,7 +241,7 @@ fun CapoForm(
 }
 
 @Composable
-private fun Sezione(
+internal fun Sezione(
     titolo: String,
     stile: TextStyle = MaterialTheme.typography.titleMedium,
     voci: @Composable () -> Unit,
@@ -246,8 +257,11 @@ private fun Sezione(
 
 /** Un Colore dalla Palette, con i Neutri raggruppati a parte. */
 @Composable
-private fun SceltaColore(titolo: String, selezionato: String?, onScelta: (String) -> Unit) {
-    Text(titolo, style = MaterialTheme.typography.titleMedium)
+private fun SceltaColore(titolo: String, selezionato: String?, onRimuovi: (() -> Unit)? = null, onScelta: (String) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(titolo, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        onRimuovi?.let { TextButton(onClick = it) { Text("Rimuovi") } }
+    }
     PALETTE.partition { it.neutro }.toList().zip(listOf("Neutri", "Colori")).forEach { (gruppo, nomeGruppo) ->
         Sezione(nomeGruppo, MaterialTheme.typography.labelLarge) {
             gruppo.forEach { CampioneColore(it, it.id == selezionato) { onScelta(it.id) } }

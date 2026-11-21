@@ -6,12 +6,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,18 +24,26 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -100,6 +107,7 @@ fun GuardarobaScreen(
     var aperto by rememberSaveable { mutableStateOf<Long?>(null) }
     // Quanti Preferiti contengono il Capo aperto, mentre è aperta la conferma di eliminazione; null = nessuna conferma.
     var preferitiDaEliminare by rememberSaveable { mutableStateOf<Int?>(null) }
+    var filtriAperti by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     aperto?.let { id ->
@@ -139,7 +147,7 @@ fun GuardarobaScreen(
         } else {
             val filtrati = lista.filter(vm.filtro::ammette)
             Column(Modifier.padding(padding)) {
-                BarraFiltri(vm.filtro) { vm.filtro = it }
+                FiltriAttivi(vm.filtro, onApri = { filtriAperti = true }) { vm.filtro = it }
                 if (filtrati.isEmpty()) {
                     Column(
                         Modifier.fillMaxWidth().weight(1f).padding(32.dp),
@@ -152,6 +160,9 @@ fun GuardarobaScreen(
                 } else {
                     GrigliaCapi(filtrati, onApri = { aperto = it.id }, Modifier.weight(1f))
                 }
+            }
+            if (filtriAperti) {
+                PannelloFiltri(vm.filtro, filtrati.size, onCambia = { vm.filtro = it }, onChiudi = { filtriAperti = false })
             }
         }
     }
@@ -177,58 +188,98 @@ private fun ConfermaEliminazione(quanti: Int, onConferma: () -> Unit, onAnnulla:
     )
 }
 
-/** Una riga per filtro, scorrevole in orizzontale; toccare di nuovo la voce scelta la toglie. */
+/** Il pulsante Filtri, poi solo i filtri attivi: toccarne uno lo toglie. */
 @Composable
-private fun BarraFiltri(filtro: Filtro, onCambia: (Filtro) -> Unit) {
-    Column(Modifier.padding(horizontal = 12.dp)) {
-        RigaFiltri {
-            if (filtro.attivo) {
-                AssistChip(
-                    onClick = { onCambia(Filtro()) },
-                    label = { Text("Azzera") },
-                    leadingIcon = { Icon(Icons.Filled.Close, contentDescription = null) },
-                )
-            }
-            Categoria.entries.forEach {
-                FilterChip(
-                    selected = it == filtro.categoria,
-                    onClick = { onCambia(filtro.copy(categoria = it.takeIf { it != filtro.categoria })) },
-                    label = { Text(it.nome) },
-                )
-            }
-        }
-        RigaFiltri {
-            (Stagione.entries - Stagione.TUTTO_L_ANNO).forEach { // "tutto l'anno" entra già in ogni filtro
-                FilterChip(
-                    selected = it == filtro.stagione,
-                    onClick = { onCambia(filtro.copy(stagione = it.takeIf { it != filtro.stagione })) },
-                    label = { Text(it.nome) },
-                )
-            }
-        }
-        RigaFiltri {
-            PALETTE.forEach {
-                FilterChip(
-                    selected = it.id == filtro.colore,
-                    onClick = { onCambia(filtro.copy(colore = it.id.takeIf { it != filtro.colore })) },
-                    label = { Text(it.nome) },
-                    leadingIcon = {
-                        Box(
-                            Modifier
-                                .size(16.dp)
-                                .background(it.campione(), CircleShape)
-                                .border(it.bordo(), CircleShape),
-                        )
-                    },
-                )
-            }
+private fun FiltriAttivi(filtro: Filtro, onApri: () -> Unit, onCambia: (Filtro) -> Unit) {
+    FlowRow(
+        Modifier.padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
+        AssistChip(
+            onClick = onApri,
+            label = { Text("Filtri") },
+            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+        )
+        filtro.categoria?.let { FiltroAttivo(it.nome) { onCambia(filtro.copy(categoria = null)) } }
+        filtro.stagione?.let { FiltroAttivo(it.nome) { onCambia(filtro.copy(stagione = null)) } }
+        filtro.colore?.let(::colore)?.let { FiltroAttivo(it.nome, it) { onCambia(filtro.copy(colore = null)) } }
+        if (listOfNotNull(filtro.categoria, filtro.stagione, filtro.colore).size > 1) {
+            TextButton(onClick = { onCambia(Filtro()) }) { Text("Azzera") }
         }
     }
 }
 
 @Composable
-private fun RigaFiltri(voci: @Composable () -> Unit) {
-    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { voci() }
+private fun FiltroAttivo(etichetta: String, colore: Colore? = null, onTogli: () -> Unit) {
+    InputChip(
+        selected = true,
+        onClick = onTogli,
+        label = { Text(etichetta) },
+        leadingIcon = colore?.let { { PuntoColore(it) } },
+        trailingIcon = { Icon(Icons.Filled.Close, contentDescription = "Togli", Modifier.size(InputChipDefaults.IconSize)) },
+    )
+}
+
+@Composable
+private fun PuntoColore(colore: Colore) {
+    Box(Modifier.size(16.dp).background(colore.campione(), CircleShape).border(colore.bordo(), CircleShape))
+}
+
+/** Il pannello dal basso con tutti i filtri: si applicano subito; toccare di nuovo la voce scelta la toglie. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PannelloFiltri(filtro: Filtro, quanti: Int, onCambia: (Filtro) -> Unit, onChiudi: () -> Unit) {
+    val stato = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    ModalBottomSheet(onDismissRequest = onChiudi, sheetState = stato) {
+        Column(
+            Modifier.verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text("Filtri", style = MaterialTheme.typography.titleLarge)
+            Sezione("Categoria") {
+                Categoria.entries.forEach {
+                    FilterChip(
+                        selected = it == filtro.categoria,
+                        onClick = { onCambia(filtro.copy(categoria = it.takeIf { it != filtro.categoria })) },
+                        label = { Text(it.nome) },
+                    )
+                }
+            }
+            Sezione("Stagione") {
+                (Stagione.entries - Stagione.TUTTO_L_ANNO).forEach { // "tutto l'anno" entra già in ogni filtro
+                    FilterChip(
+                        selected = it == filtro.stagione,
+                        onClick = { onCambia(filtro.copy(stagione = it.takeIf { it != filtro.stagione })) },
+                        label = { Text(it.nome) },
+                    )
+                }
+            }
+            Sezione("Colore") {
+                PALETTE.forEach {
+                    FilterChip(
+                        selected = it.id == filtro.colore,
+                        onClick = { onCambia(filtro.copy(colore = it.id.takeIf { it != filtro.colore })) },
+                        label = { Text(it.nome) },
+                        leadingIcon = { PuntoColore(it) },
+                    )
+                }
+            }
+            Button(
+                onClick = { scope.launch { stato.hide() }.invokeOnCompletion { onChiudi() } },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    when (quanti) {
+                        0 -> "Nessun capo: chiudi"
+                        1 -> "Mostra 1 capo"
+                        else -> "Mostra $quanti capi"
+                    },
+                )
+            }
+        }
+    }
 }
 
 @Composable
