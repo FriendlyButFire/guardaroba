@@ -252,7 +252,7 @@ if [[ ! -f "$APK" ]] || confirm "Vuoi ricompilarlo adesso (qualche minuto)?"; th
   # X: è la radice del repo (README); da un worktree si compila in X:/.worktrees/NN.
   RADICE="${REPO%%/.worktrees/*}"
   ATTESO="$(cygpath -d "$RADICE")"
-  ATTUALE="$(cmd //c subst | tr -d '\r' | sed -n 's/^X:\: => //p')"
+  ATTUALE="$(cmd //c subst | tr -d '\r' | sed -n 's/^X:.: => //p')"
   if [[ -z "$ATTUALE" ]]; then
     cmd //c "subst X: $ATTESO"
   elif [[ "${ATTUALE,,}" != "${ATTESO,,}" ]]; then
