@@ -20,14 +20,23 @@ data class Bozza(
     val taglia: String = "",
     val percorsoFoto: String? = null,
 ) : Serializable {
+    /** La regola dei campi obbligatori, unica: i loro nomi come nella scheda, se sono ancora vuoti. */
+    val mancano: List<String>
+        get() = listOfNotNull(
+            "Categoria".takeIf { categoria == null },
+            "Tipo".takeIf { tipo == null },
+            "Colore principale".takeIf { colorePrincipale == null },
+        )
+
     /**
-     * Il Capo da salvare, oppure null se manca un campo obbligatorio. Modificando, copy() di [iniziale] tiene id, creatoIl
+     * Il Capo da salvare, oppure null se [mancano] non è vuota. Modificando, copy() di [iniziale] tiene id, creatoIl
      * e ogni campo che la scheda non mostra; senza [iniziale] è un Capo nuovo.
      */
     fun capo(iniziale: Capo?): Capo? {
-        val c = categoria ?: return null
-        val t = tipo ?: return null
-        val p = colorePrincipale ?: return null
+        if (mancano.isNotEmpty()) return null
+        val c = categoria!!
+        val t = tipo!!
+        val p = colorePrincipale!!
         return (iniziale ?: Capo(categoria = c, tipo = t, colorePrincipale = p)).copy(
             categoria = c, tipo = t, colorePrincipale = p, coloreSecondario = coloreSecondario,
             motivo = motivo, stagione = stagione, taglia = taglia.trim().ifEmpty { null }, percorsoFoto = percorsoFoto,

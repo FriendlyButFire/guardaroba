@@ -36,6 +36,14 @@ class BozzaTest {
     }
 
     @Test
+    fun `Manca elenca i campi obbligatori vuoti, nell'ordine della scheda`() {
+        assertEquals(listOf("Categoria", "Tipo", "Colore principale"), Bozza().mancano)
+        assertEquals(listOf("Tipo", "Colore principale"), Bozza(Categoria.SOPRA).mancano)
+        assertEquals(listOf("Colore principale"), Bozza(Categoria.SOPRA, "camicia", coloreSecondario = "bianco").mancano)
+        assertEquals(emptyList<String>(), camicia.duplicato().mancano)
+    }
+
+    @Test
     fun `una Bozza incompleta non diventa un Capo`() {
         assertEquals(null, Bozza(Categoria.SOPRA, colorePrincipale = "rosa").capo(iniziale = null))
     }

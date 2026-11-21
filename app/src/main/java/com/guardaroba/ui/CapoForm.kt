@@ -162,7 +162,7 @@ fun CapoForm(
     Scaffold(
         contentWindowInsets = WindowInsets(0), // insets already applied by the outer Scaffold
         snackbarHost = { SnackbarHost(avvisi) },
-        topBar = {
+        topBar = { Column {
             TopAppBar(
                 title = { Text(if (iniziale == null) "Nuovo capo" else "Modifica capo") },
                 navigationIcon = {
@@ -190,7 +190,22 @@ fun CapoForm(
                 },
                 windowInsets = WindowInsets(0),
             )
-        },
+            // Perché Salva non si può usare, sotto la barra così resta visibile mentre si scorre.
+            val motivo = when {
+                bozza.mancano.isNotEmpty() -> "Manca: " + bozza.mancano.joinToString(", ")
+                inCompressione -> "Preparo la foto…"
+                else -> null
+            }
+            motivo?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)
+                        .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                )
+            }
+        } },
     ) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
