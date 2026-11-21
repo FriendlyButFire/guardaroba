@@ -9,7 +9,7 @@
 - [x] Regole di backup che includono database e cartella foto ed escludono la cache (sia formato legacy sia data-extraction-rules)
 - [x] Impostazioni mostrano MB usati / 25 MB e numero di foto
 - [x] Avviso a partire dall'80%, avviso di backup fermo dal 100%
-- [ ] Verifica manuale con `adb shell bmgr`, documentata nel ticket alla chiusura
+- [x] Verifica manuale con `adb shell bmgr`, documentata nel ticket alla chiusura
 
 ## Comments
 
@@ -24,3 +24,5 @@
   adb uninstall com.guardaroba && adb install app/build/outputs/apk/debug/app-debug.apk
   # alla reinstallazione Guardaroba, Preferiti e foto devono riapparire; scatti in cache no
   ```
+
+- 2026-11-21: l'utente ha eseguito `scripts/installa-sul-telefono.sh` sul proprio Pixel 8 Pro (installazione + verifica `bmgr`) e conferma che funziona tutto.

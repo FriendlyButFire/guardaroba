@@ -20,3 +20,5 @@
 - Non verificati: il percorso d'errore di Esporta (scrittura che fallisce a metà, difficile da provocare sull'emulatore) e la ricreazione del processo a form aperto.
 - Le ultime correzioni della review (il suggerimento dell'Intero, il nuovo controllo su `salva`) sono verificate dai test e dalla build, non sull'emulatore.
 - Impeccable: è una scelta dell'utente dopo aver visto l'app sul telefono, e resta aperta.
+
+- 2026-11-21: installazione e verifica sul telefono dell'utente (Pixel 8 Pro) completate con lo script; l'utente conferma che funziona tutto. Impeccable: decisione ancora all'utente.
