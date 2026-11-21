@@ -92,17 +92,21 @@ fun Colore.campione(): Color = Color.hsl(h.toFloat(), s / 100f, l / 100f)
  * uno bianco in quello chiaro), cioè sotto il contrasto 3:1 che WCAG chiede agli elementi non testuali.
  */
 @Composable
-fun Colore.bordo(): BorderStroke {
-    val (a, b) = listOf(campione().luminance(), MaterialTheme.colorScheme.surface.luminance()).sorted()
-    return if ((b + 0.05f) / (a + 0.05f) < 3f) {
+fun Colore.bordo(): BorderStroke =
+    if (contrasto(campione(), MaterialTheme.colorScheme.surface) < 3f) {
         BorderStroke(2.dp, MaterialTheme.colorScheme.outline)
     } else {
         BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     }
-}
 
-/** Testo leggibile sopra il campione. */
-fun Colore.testoSopra(): Color = if (l > 55) Color.Black else Color.White
+/** Testo leggibile sopra il campione: tra nero e bianco quello col contrasto WCAG più alto. */
+fun Colore.testoSopra(): Color = campione().let { if (contrasto(Color.Black, it) >= contrasto(Color.White, it)) Color.Black else Color.White }
+
+/** Il rapporto di contrasto WCAG tra due colori, da 1 a 21. */
+private fun contrasto(a: Color, b: Color): Float {
+    val (scura, chiara) = listOf(a.luminance(), b.luminance()).sorted()
+    return (chiara + 0.05f) / (scura + 0.05f)
+}
 
 /** Le etichette cominciano con la maiuscola; i nomi del Motore ("estivo", "rosso", "t-shirt") sono minuscoli e restano così nei dati. */
 fun String.maiuscola() = replaceFirstChar { it.uppercase() }
