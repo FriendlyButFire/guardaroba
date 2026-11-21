@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.guardaroba.motore.Categoria
+import com.guardaroba.motore.Giudizio
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -38,6 +39,22 @@ class PreferitoDaoTest {
         assertEquals(1, preferiti.size)
         assertEquals("blu navy + denim + bianco: neutri", preferiti[0].preferito.spiegazione)
         assertEquals(capi.toSet(), preferiti[0].capi.toSet())
+    }
+
+    @Test
+    fun `modificare un Capo di un Preferito ne aggiorna il Giudizio, e un Outfit non più valido resta tra i Preferiti`() = runBlocking {
+        val db = GuardarobaDatabase.apri(context)
+        val (camicia, jeans, sneakers) = db.inserisci(sopra, sotto, scarpe)
+        db.preferitoDao().salva("blu navy + denim + bianco: neutri", setOf(camicia.id, jeans.id, sneakers.id))
+        suspend fun giudizio() = db.preferitoDao().tutti().first().single().giudizio()
+        assertEquals(Giudizio.Valido("blu navy + denim + bianco: neutri"), giudizio())
+
+        db.capoDao().salva(camicia.copy(colorePrincipale = "rosso"))
+        assertEquals(Giudizio.Valido("rosso + denim + bianco: un colore + neutri"), giudizio())
+
+        db.capoDao().salva(jeans.copy(colorePrincipale = "giallo"))
+        assertEquals(Giudizio.NonValido("rosso + giallo + bianco non si abbinano"), giudizio())
+        db.close()
     }
 
     @Test

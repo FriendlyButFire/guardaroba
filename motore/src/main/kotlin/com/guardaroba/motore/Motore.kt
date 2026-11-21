@@ -49,15 +49,12 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
         partenza.categoria.escluse.forEach(perCategoria::remove)
     }
     fun capi(categoria: Categoria) = perCategoria[categoria].orEmpty()
-    // Sopra e Sotto mancano solo se manca anche l'alternativa, l'Intero.
-    val haIntero = Categoria.INTERO in perCategoria
-    val mancanti = listOf(Categoria.SOPRA, Categoria.SOTTO).filterNot { haIntero || it in perCategoria } +
-        listOf(Categoria.SCARPE).filterNot { it in perCategoria }
+    val mancanti = mancanti(perCategoria.keys)
     if (mancanti.isNotEmpty()) return Esito.MancaCategoria(mancanti)
     // shortcut: enumerazione completa degli Outfit possibili, adeguata fino a qualche centinaio di Capi (spec).
     val basi = capi(Categoria.SOPRA).flatMap { sopra -> capi(Categoria.SOTTO).map { sotto -> listOf(sopra, sotto) } } +
         capi(Categoria.INTERO).map { intero -> listOf(intero) }
-    fun proposte(candidati: List<Outfit>) = candidati.mapNotNull { o -> spiegazione(o)?.let { Esito.Proposta(o, it) } }
+    fun proposte(candidati: List<Outfit>) = candidati.mapNotNull { o -> (giudica(o) as? Giudizio.Valido)?.let { Esito.Proposta(o, it.spiegazione) } }
     // Con invernale o mezza stagione ogni Capospalla compatibile dà una Proposta; senza nessuno, l'Outfit resta senza.
     // Un Capospalla di partenza invece entra sempre: senza di lui non c'è Proposta.
     val capospallaDiPartenza = partenza?.categoria == Categoria.CAPOSPALLA
@@ -77,12 +74,35 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
     return valide.filter { it.outfit.idCapi !in giàViste }.randomOrNull(caso) ?: Esito.Esaurite
 }
 
-/** La Spiegazione dell'Outfit, o null se l'Outfit non è valido. Gli Accessori non contano (ADR-0004). */
-private fun spiegazione(outfit: Outfit): String? {
-    val capi = outfit.capi.filter { it.categoria != Categoria.ACCESSORI }
-    if (capi.count { it.motivo != Motivo.TINTA_UNITA } > 1) return null
-    val colori = capi.map { it.colorePrincipale }.distinct()
-    return colori.joinToString(" + ") { it.nome } + ": " + (regola(colori) ?: return null)
+/** Le Categorie obbligatorie assenti tra [presenti]: Sopra e Sotto mancano solo se manca anche l'alternativa, l'Intero. */
+private fun mancanti(presenti: Set<Categoria>): List<Categoria> =
+    listOf(Categoria.SOPRA, Categoria.SOTTO).filterNot { Categoria.INTERO in presenti || it in presenti } +
+        listOf(Categoria.SCARPE).filterNot { it in presenti }
+
+/** Il giudizio del Motore su un Outfit: valido con la sua Spiegazione, o non valido con la ragione. */
+sealed interface Giudizio {
+    data class Valido(val spiegazione: String) : Giudizio
+    data class NonValido(val ragione: String) : Giudizio
+}
+
+/**
+ * Giudica un Outfit qualsiasi, anche uno non fatto da [proponi] (un Preferito con Capi modificati): al massimo un Capo
+ * per Categoria (Accessori esclusi), nessuna Categoria esclusa, quelle obbligatorie presenti, poi Motivi e Colori. Gli Accessori non contano
+ * per Motivi e Colori (ADR-0004). I Colori si elencano in ordine di Categoria.
+ */
+fun giudica(outfit: Outfit): Giudizio {
+    val capi = outfit.capi.sortedBy { it.categoria }
+    val categorie = capi.groupingBy { it.categoria }.eachCount()
+    categorie.entries.find { it.key != Categoria.ACCESSORI && it.value > 1 }?.let { return Giudizio.NonValido("più di un Capo ${it.key.nome}") }
+    capi.firstNotNullOfOrNull { c -> c.categoria.escluse.find { it in categorie }?.let { c.categoria to it } }
+        ?.let { (a, b) -> return Giudizio.NonValido("${a.nome} e ${b.nome} insieme") }
+    mancanti(categorie.keys).takeIf { it.isNotEmpty() }
+        ?.let { m -> return Giudizio.NonValido("manca " + m.joinToString(" e ") { it.nome }) }
+    val colorati = capi.filter { it.categoria != Categoria.ACCESSORI }
+    if (colorati.count { it.motivo != Motivo.TINTA_UNITA } > 1) return Giudizio.NonValido("più di un Capo non in tinta unita")
+    val colori = colorati.map { it.colorePrincipale }.distinct()
+    val elenco = colori.joinToString(" + ") { it.nome }
+    return regola(colori)?.let { Giudizio.Valido("$elenco: $it") } ?: Giudizio.NonValido("$elenco non si abbinano")
 }
 
 /** La regola che rende validi insieme questi Colori distinti, o null se non stanno insieme. */
