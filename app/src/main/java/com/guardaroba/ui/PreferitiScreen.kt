@@ -132,7 +132,14 @@ private fun SchedaPreferito(preferito: PreferitoConCapi, onApri: () -> Unit, onR
             // Spiegazione e validità seguono i Capi di adesso; un Preferito non più valido resta, segnalato (ADR-0011).
             Box(Modifier.padding(8.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
                 when (val giudizio = preferito.giudizio()) {
-                    is Giudizio.Valido -> Text(giudizio.spiegazione, style = MaterialTheme.typography.bodyLarge)
+                    // La frase come in Outfit, la regola come etichetta (ADR-0012); più piccole, perché qui sono tante.
+                    is Giudizio.Valido -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        val perché = preferito.perché()
+                        Text(perché?.frase ?: giudizio.spiegazione, style = MaterialTheme.typography.bodyLarge)
+                        perché?.let {
+                            Text(it.regola.maiuscola(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                     is Giudizio.NonValido -> NonPiùValido(giudizio.ragione, inGrande = false)
                 }
             }
