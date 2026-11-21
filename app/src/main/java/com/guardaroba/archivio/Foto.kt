@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.media.ExifInterface
 import android.os.Build
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -22,31 +23,37 @@ class Foto(context: Context) {
     fun file(nome: String) = File(cartella, nome)
 
     /**
-     * Legge l'immagine da [apri] (chiamato più volte, uno stream nuovo ogni volta), la raddrizza secondo l'EXIF,
+     * Legge la Foto da [apri] (chiamato più volte, uno stream nuovo ogni volta), la raddrizza secondo l'EXIF,
      * la riduce a [LATO] px sul lato lungo e la salva in WebP. Ritorna il nome del file.
      */
     fun comprimi(apri: () -> InputStream): String {
         val bordi = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         apri().use { BitmapFactory.decodeStream(it, null, bordi) }
         val latoLungo = max(bordi.outWidth, bordi.outHeight)
-        if (latoLungo <= 0) throw IOException("Immagine non leggibile")
+        if (latoLungo <= 0) throw IOException("Foto non leggibile")
         // Decodifica già sottocampionata, per non tenere in memoria i 12+ Mpx dell'originale.
         var campione = 1
         while (latoLungo / (campione * 2) >= LATO) campione *= 2
         val letta = apri().use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = campione }) }
-            ?: throw IOException("Immagine non leggibile")
+            ?: throw IOException("Foto non leggibile")
 
         val scala = minOf(1f, LATO.toFloat() / max(letta.width, letta.height))
         val matrice = Matrix().apply { postScale(scala, scala); postRotate(gradiExif(apri)) }
         val finale = Bitmap.createBitmap(letta, 0, 0, letta.width, letta.height, matrice, true)
 
+        val webp = ByteArrayOutputStream()
+        if (!finale.compress(WEBP, QUALITA, webp)) throw IOException("Compressione WebP fallita")
+        return scrivi(webp.toByteArray())
+    }
+
+    /** Salva [bytes] (una WebP) come Foto nuova, sotto un nome che non esce dalla cartella. Ritorna il nome del file. */
+    fun scrivi(bytes: ByteArray): String {
         cartella.mkdirs()
         val nome = "${UUID.randomUUID()}.webp"
-        val file = file(nome)
         try {
-            file.outputStream().use { if (!finale.compress(WEBP, QUALITA, it)) throw IOException("Compressione WebP fallita") }
+            file(nome).writeBytes(bytes)
         } catch (e: Exception) {
-            file.delete()
+            elimina(nome) // una scrittura a metà (disco pieno) non deve restare
             throw e
         }
         return nome

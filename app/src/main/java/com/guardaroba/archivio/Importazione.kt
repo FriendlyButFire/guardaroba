@@ -13,7 +13,6 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
-import java.util.UUID
 import java.util.zip.ZipInputStream
 
 /** Il file scelto non è un export del Guardaroba leggibile da questa versione; il Guardaroba attuale non è stato toccato. */
@@ -70,11 +69,9 @@ class Importazione(private val db: GuardarobaDatabase, private val foto: Foto) {
                 json = bytes
             } else {
                 if (nomeFoto in nuoveFoto) throw ArchivioNonValido("Foto $nomeFoto ripetuta")
-                // shortcut: i byte non vengono decodificati come immagine; una foto rovinata si vede vuota. Da controllare se capita.
-                val suDisco = "${UUID.randomUUID()}.webp"
-                nuoveFoto[nomeFoto] = suDisco
+                // shortcut: i byte non vengono decodificati; una Foto rovinata si vede vuota. Da controllare se capita.
                 // Un errore di scrittura (disco pieno) non è colpa del file: resta una IOException, non [ArchivioNonValido].
-                foto.file(suDisco).apply { parentFile!!.mkdirs() }.writeBytes(bytes)
+                nuoveFoto[nomeFoto] = foto.scrivi(bytes)
             }
         }
         val testo = json ?: throw ArchivioNonValido("Manca ${Esportazione.NOME_JSON}")

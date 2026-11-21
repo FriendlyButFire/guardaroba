@@ -63,4 +63,16 @@ class FotoTest {
         BitmapFactory.decodeFile(compressa.path, bordi)
         assertEquals(540 to 720, bordi.outWidth to bordi.outHeight)
     }
+
+    @Test
+    fun `scrivere dei byte dà ogni volta una Foto nuova con quei byte`() {
+        val bytes = byteArrayOf(1, 2, 3)
+
+        val prima = foto.scrivi(bytes)
+        val seconda = foto.scrivi(bytes)
+
+        assertTrue(prima != seconda)
+        assertTrue(foto.tutte().containsAll(listOf(prima, seconda)))
+        assertTrue(bytes.contentEquals(foto.file(seconda).readBytes()))
+    }
 }
