@@ -86,12 +86,23 @@ private fun spiegazione(outfit: Outfit): String? {
     val capi = outfit.capi.filter { it.categoria != Categoria.ACCESSORI }
     if (capi.count { it.motivo != Motivo.TINTA_UNITA } > 1) return null
     val colori = capi.map { it.colorePrincipale }.distinct()
+    return colori.joinToString(" + ") { it.nome } + ": " + (regola(colori) ?: return null)
+}
+
+/** La regola che rende validi insieme questi Colori distinti, o null se non stanno insieme. */
+private fun regola(colori: List<Colore>): String? {
     val nonNeutri = colori.filterNot { it.neutro }
-    val regola = when (nonNeutri.size) {
+    return when (nonNeutri.size) {
         0 -> "neutri"
         1 -> "un colore + neutri"
-        2 -> armonia(nonNeutri[0], nonNeutri[1]) ?: return null
-        else -> return null
+        2 -> armonia(nonNeutri[0], nonNeutri[1])
+        else -> null
     }
-    return colori.joinToString(" + ") { it.nome } + ": " + regola
 }
+
+/** Un Colore della Palette che sta bene con un Capo, con la regola che li abbina (es. "complementari"). */
+data class Consiglio(val colore: Colore, val armonia: String)
+
+/** I Colori della Palette, in ordine di Palette, che starebbero bene col Colore principale del [capo], tranne lo stesso. */
+fun coloriConsigliati(capo: Capo): List<Consiglio> = (PALETTE - capo.colorePrincipale)
+    .mapNotNull { c -> regola(listOf(capo.colorePrincipale, c))?.let { Consiglio(c, it) } }

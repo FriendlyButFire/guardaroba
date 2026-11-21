@@ -12,9 +12,11 @@ import com.guardaroba.archivio.Capo
 import com.guardaroba.archivio.CapoDao
 import com.guardaroba.archivio.GuardarobaDatabase
 import com.guardaroba.archivio.PreferitoDao
+import com.guardaroba.motore.Consiglio
 import com.guardaroba.motore.Esito
 import com.guardaroba.motore.Richiesta
 import com.guardaroba.motore.Stagione
+import com.guardaroba.motore.coloriConsigliati
 import com.guardaroba.motore.colore
 import com.guardaroba.motore.proponi
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,8 +26,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.guardaroba.motore.Capo as CapoMotore
 
-/** L'ultimo Esito del Motore, con i Capi dell'Archivio per mostrarne le miniature. */
-data class StatoOutfit(val esito: Esito, val capi: Map<Long, Capo>)
+/** L'ultimo Esito del Motore, con i Capi dell'Archivio per mostrarne le miniature e i Colori consigliati per il Capo di partenza. */
+data class StatoOutfit(val esito: Esito, val capi: Map<Long, Capo>, val consigliati: List<Consiglio>)
 
 class OutfitViewModel(private val dao: CapoDao, private val preferiti: PreferitoDao) : ViewModel() {
     var stato by mutableStateOf<StatoOutfit?>(null)
@@ -57,7 +59,7 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
             val richiesta = capoDiPartenza?.let { Richiesta.PartiDa(it, filtroStagione) } ?: Richiesta.Genera(filtroStagione)
             val esito = proponi(perMotore, richiesta, giàViste)
             if (esito is Esito.Proposta) giàViste += esito.outfit.idCapi
-            stato = StatoOutfit(esito, capi.associateBy { it.id })
+            stato = StatoOutfit(esito, capi.associateBy { it.id }, capoDiPartenza?.let(::coloriConsigliati).orEmpty())
         }
     }
 

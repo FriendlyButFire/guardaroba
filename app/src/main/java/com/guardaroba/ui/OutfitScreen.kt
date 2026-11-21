@@ -1,13 +1,20 @@
 package com.guardaroba.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.guardaroba.motore.Consiglio
 import com.guardaroba.motore.Esito
 import com.guardaroba.motore.Stagione
 
@@ -33,7 +41,7 @@ fun OutfitScreen(vm: OutfitViewModel) {
     val stato = vm.stato
     val salvati by vm.salvati.collectAsStateWithLifecycle()
     Column(
-        Modifier.fillMaxSize().padding(24.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -70,6 +78,7 @@ fun OutfitScreen(vm: OutfitViewModel) {
             )
             Esito.Esaurite -> Messaggio("Hai visto tutte le Proposte possibili.")
         }
+        if (vm.partenza != null && stato != null) ColoriConsigliati(stato.consigliati)
         // "tutto l'anno" entra già in ogni filtro, quindi non è una voce. Vale dalla prossima Proposta.
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             (listOf(null) + (Stagione.entries - Stagione.TUTTO_L_ANNO)).forEach {
@@ -84,6 +93,28 @@ fun OutfitScreen(vm: OutfitViewModel) {
             Button(onClick = vm::ricomincia) { Text("Ricomincia") }
         } else {
             Button(onClick = vm::genera) { Text(if (stato?.esito is Esito.Proposta) "Un altro" else "Genera") }
+        }
+    }
+}
+
+/** I Colori della Palette che starebbero bene col Capo di partenza, raggruppati per Armonia. */
+@Composable
+private fun ColoriConsigliati(consigliati: List<Consiglio>) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Colori consigliati", style = MaterialTheme.typography.titleSmall)
+        consigliati.groupBy { it.armonia }.forEach { (armonia, gruppo) ->
+            Text(armonia, style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                gruppo.forEach { (colore) ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Box(
+                            Modifier.size(20.dp).background(colore.campione(), CircleShape)
+                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+                        )
+                        Text(colore.nome, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
         }
     }
 }
