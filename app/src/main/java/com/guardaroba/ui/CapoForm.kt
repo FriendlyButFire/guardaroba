@@ -37,8 +37,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -50,6 +50,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Text
@@ -84,44 +86,46 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 
+/** Come si esce dalla scheda: con modifiche non salvate prima si chiede se scartarle. */
+private enum class Uscita { CHIUDI, PARTI_DA, DUPLICA }
+
 /**
- * Scheda di un Capo: nuovo se [iniziale] è null, altrimenti la modifica di [iniziale] (stesso id).
- * Un campo = uno stato + una [Sezione]; nulla si salva finché non si preme Salva.
+ * Scheda di un Capo: nuovo se [iniziale] è null, altrimenti la modifica di [iniziale] (stesso id). Parte da [partenza]:
+ * vuota, il Capo da modificare o quello da duplicare. Nulla si salva finché non si preme Salva.
  * Una foto scelta qui è già compressa in [Foto]; se non arriva al salvataggio (sostituita, o form chiuso senza Salva) il form la cancella,
  * mentre quella di [iniziale] la cancella [com.guardaroba.archivio.CapoDao.salva] solo a Salva.
- * [onElimina] chiede di eliminare [iniziale]: la conferma la chiede chi chiama. [onPartiDa] è "Parti da questo capo" su [iniziale].
+ * [onSalvaEAltro] (solo per un Capo nuovo) salva e chiede una scheda vuota. Su [iniziale]: [onElimina] chiede di eliminarlo
+ * (la conferma la chiede chi chiama), [onPartiDa] è "Parti da questo capo", [onDuplica] apre un Capo nuovo uguale.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CapoForm(
+    partenza: Bozza,
+    iniziale: Capo?,
+    avvisi: SnackbarHostState,
     onSalva: (Capo) -> Unit,
-    onAnnulla: () -> Unit,
-    iniziale: Capo? = null,
+    onSalvaEAltro: (Capo) -> Unit,
+    onChiudi: () -> Unit,
     onElimina: () -> Unit,
     onPartiDa: () -> Unit,
+    onDuplica: () -> Unit,
 ) {
-    var categoria by rememberSaveable { mutableStateOf(iniziale?.categoria) }
-    var tipo by rememberSaveable { mutableStateOf(iniziale?.tipo) }
-    var colorePrincipale by rememberSaveable { mutableStateOf(iniziale?.colorePrincipale) }
-    var coloreSecondario by rememberSaveable { mutableStateOf(iniziale?.coloreSecondario) }
-    var motivo by rememberSaveable { mutableStateOf(iniziale?.motivo ?: Motivo.TINTA_UNITA) }
-    var stagione by rememberSaveable { mutableStateOf(iniziale?.stagione ?: Stagione.TUTTO_L_ANNO) }
-    var taglia by rememberSaveable { mutableStateOf(iniziale?.taglia.orEmpty()) }
-    var percorsoFoto by rememberSaveable { mutableStateOf(iniziale?.percorsoFoto) }
+    var bozza by rememberSaveable { mutableStateOf(partenza) }
     var inCompressione by remember { mutableStateOf(false) }
+    var uscita by rememberSaveable { mutableStateOf<Uscita?>(null) } // l'uscita in attesa di "Scartare le modifiche?"
 
     val context = LocalContext.current
     val foto = remember { Foto(context) }
     val scope = rememberCoroutineScope()
     fun scarta(nome: String?) { if (nome != iniziale?.percorsoFoto) foto.elimina(nome) }
-    // Il form si chiude con Annulla, Indietro, cambio di sezione o chiusura dell'app: la foto non salvata va via in ogni caso.
+    // Il form si chiude con ✕, Indietro, cambio di sezione o chiusura dell'app: la foto non salvata va via in ogni caso.
     // Non a una rotazione, dove rememberSaveable la ripresenta.
     // shortcut: se Android uccide il processo e l'utente non torna al form, o se il form si chiude a metà compressione,
     // il file resta orfano in foto/; aggiungere una pulizia dei file non usati da nessun Capo se capita davvero.
     val activity = LocalActivity.current
     var salvato by remember { mutableStateOf(false) }
     DisposableEffect(Unit) {
-        onDispose { if (!salvato && activity?.isChangingConfigurations != true) scarta(percorsoFoto) }
+        onDispose { if (!salvato && activity?.isChangingConfigurations != true) scarta(bozza.percorsoFoto) }
     }
     fun usa(uri: Uri, poi: () -> Unit = {}) {
         inCompressione = true
@@ -132,7 +136,7 @@ fun CapoForm(
             }
             inCompressione = false
             esito
-                .onSuccess { scarta(percorsoFoto); percorsoFoto = it }
+                .onSuccess { scarta(bozza.percorsoFoto); bozza = bozza.copy(percorsoFoto = it) }
                 .onFailure { Toast.makeText(context, "Impossibile leggere la foto", Toast.LENGTH_SHORT).show() }
         }
     }
@@ -144,42 +148,40 @@ fun CapoForm(
     }
     val galleria = rememberLauncherForActivityResult(PickVisualMedia()) { uri -> uri?.let { usa(it) } }
 
+    fun esegui(u: Uscita) = when (u) {
+        Uscita.CHIUDI -> onChiudi()
+        Uscita.PARTI_DA -> onPartiDa() // parte dal Capo salvato
+        Uscita.DUPLICA -> onDuplica() // duplica il Capo salvato
+    }
+    fun esci(u: Uscita) { if (bozza != partenza) uscita = u else esegui(u) }
+    BackHandler { esci(Uscita.CHIUDI) }
 
-    BackHandler(onBack = onAnnulla)
+    val capo = bozza.capo(iniziale).takeIf { !inCompressione }
+    fun salva(poi: (Capo) -> Unit) { capo?.let { salvato = true; poi(it) } }
 
-    val c = categoria
-    val t = tipo
-    val p = colorePrincipale
     Scaffold(
         contentWindowInsets = WindowInsets(0), // insets already applied by the outer Scaffold
+        snackbarHost = { SnackbarHost(avvisi) },
         topBar = {
             TopAppBar(
                 title = { Text(if (iniziale == null) "Nuovo capo" else "Modifica capo") },
                 navigationIcon = {
-                    IconButton(onClick = onAnnulla) { Icon(Icons.Filled.Close, contentDescription = "Chiudi") }
+                    IconButton(onClick = { esci(Uscita.CHIUDI) }) { Icon(Icons.Filled.Close, contentDescription = "Chiudi") }
                 },
                 actions = {
-                    TextButton(
-                        enabled = c != null && t != null && p != null && !inCompressione,
-                        onClick = {
-                            // copy() del Capo modificato tiene id, creatoIl e ogni campo che il form non mostra.
-                            salvato = true
-                            onSalva(
-                                (iniziale ?: Capo(categoria = c!!, tipo = t!!, colorePrincipale = p!!)).copy(
-                                    categoria = c!!, tipo = t!!, colorePrincipale = p!!, coloreSecondario = coloreSecondario,
-                                    motivo = motivo, stagione = stagione, taglia = taglia.trim().ifEmpty { null },
-                                    percorsoFoto = percorsoFoto,
-                                ),
+                    TextButton(enabled = capo != null, onClick = { salva(onSalva) }) { Text("Salva") }
+                    AltreAzioni {
+                        if (iniziale == null) {
+                            DropdownMenuItem(
+                                text = { Text("Salva e aggiungi un altro") },
+                                enabled = capo != null,
+                                onClick = { it(); salva(onSalvaEAltro) },
                             )
-                        },
-                    ) { Text("Salva") }
-                    if (iniziale != null) {
-                        AltreAzioni {
-                            // Parte dal Capo salvato: le modifiche non salvate qui si perdono, come chiudendo.
-                            DropdownMenuItem(text = { Text("Parti da questo capo") }, onClick = { it(); onPartiDa() })
+                        } else {
+                            DropdownMenuItem(text = { Text("Duplica") }, onClick = { it(); esci(Uscita.DUPLICA) })
+                            DropdownMenuItem(text = { Text("Parti da questo capo") }, onClick = { it(); esci(Uscita.PARTI_DA) })
                             DropdownMenuItem(
                                 text = { Text("Elimina", color = MaterialTheme.colorScheme.error) },
-                                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                 enabled = !inCompressione,
                                 onClick = { it(); onElimina() },
                             )
@@ -195,7 +197,7 @@ fun CapoForm(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             AreaFoto(
-                percorsoFoto,
+                bozza.percorsoFoto,
                 inCompressione,
                 onScatta = {
                     try {
@@ -205,34 +207,36 @@ fun CapoForm(
                     }
                 },
                 onGalleria = { galleria.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) },
-                onRimuovi = { scarta(percorsoFoto); percorsoFoto = null },
+                onRimuovi = { scarta(bozza.percorsoFoto); bozza = bozza.copy(percorsoFoto = null) },
             )
 
             Sezione("Categoria") {
                 Categoria.entries.forEach {
                     FilterChip(
-                        selected = it == categoria,
-                        onClick = { if (it != categoria) { categoria = it; tipo = null } },
+                        selected = it == bozza.categoria,
+                        onClick = { if (it != bozza.categoria) bozza = bozza.copy(categoria = it, tipo = null) },
                         label = { Text(it.nome) },
                     )
                 }
             }
-            categoria?.let { scelta ->
+            bozza.categoria?.let { scelta ->
                 Sezione("Tipo") {
                     scelta.tipi.forEach {
-                        FilterChip(selected = it == tipo, onClick = { tipo = it }, label = { Text(it) })
+                        FilterChip(selected = it == bozza.tipo, onClick = { bozza = bozza.copy(tipo = it) }, label = { Text(it) })
                     }
                 }
             }
 
-            SceltaColore("Colore principale", colorePrincipale) { colorePrincipale = it }
+            SceltaColore("Colore principale", bozza.colorePrincipale) { bozza = bozza.copy(colorePrincipale = it) }
             // Il Colore secondario resta chiuso finché non serve; è già aperto se il Capo ne ha uno.
-            var conSecondario by rememberSaveable { mutableStateOf(coloreSecondario != null) }
+            var conSecondario by rememberSaveable { mutableStateOf(bozza.coloreSecondario != null) }
             if (conSecondario) {
                 // Toccare di nuovo il Colore scelto lo toglie; Rimuovi lo toglie e richiude la scelta.
-                SceltaColore("Colore secondario", coloreSecondario, onRimuovi = { coloreSecondario = null; conSecondario = false }) {
-                    coloreSecondario = it.takeIf { it != coloreSecondario }
-                }
+                SceltaColore(
+                    "Colore secondario",
+                    bozza.coloreSecondario,
+                    onRimuovi = { bozza = bozza.copy(coloreSecondario = null); conSecondario = false },
+                ) { bozza = bozza.copy(coloreSecondario = it.takeIf { it != bozza.coloreSecondario }) }
             } else {
                 TextButton(onClick = { conSecondario = true }) {
                     Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
@@ -243,24 +247,34 @@ fun CapoForm(
 
             Sezione("Motivo") {
                 Motivo.entries.forEach {
-                    FilterChip(selected = it == motivo, onClick = { motivo = it }, label = { Text(it.nome) })
+                    FilterChip(selected = it == bozza.motivo, onClick = { bozza = bozza.copy(motivo = it) }, label = { Text(it.nome) })
                 }
             }
             Sezione("Stagione") {
                 Stagione.entries.forEach {
-                    FilterChip(selected = it == stagione, onClick = { stagione = it }, label = { Text(it.nome) })
+                    FilterChip(selected = it == bozza.stagione, onClick = { bozza = bozza.copy(stagione = it) }, label = { Text(it.nome) })
                 }
             }
 
             OutlinedTextField(
-                value = taglia,
-                onValueChange = { taglia = it },
+                value = bozza.taglia,
+                onValueChange = { bozza = bozza.copy(taglia = it) },
                 label = { Text("Taglia (opzionale)") },
                 placeholder = { Text("es. M, 42, W32 L34") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+
+    uscita?.let { u ->
+        AlertDialog(
+            onDismissRequest = { uscita = null },
+            title = { Text("Scartare le modifiche?") },
+            text = { Text("Le modifiche a questo capo non verranno salvate.") },
+            confirmButton = { TextButton(onClick = { uscita = null; esegui(u) }) { Text("Scarta") } },
+            dismissButton = { TextButton(onClick = { uscita = null }) { Text("Continua a modificare") } },
+        )
     }
 }
 

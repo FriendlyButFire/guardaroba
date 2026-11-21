@@ -41,13 +41,17 @@ import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -108,23 +112,44 @@ fun GuardarobaScreen(
     // Quanti Preferiti contengono il Capo aperto, mentre è aperta la conferma di eliminazione; null = nessuna conferma.
     var preferitiDaEliminare by rememberSaveable { mutableStateOf<Int?>(null) }
     var filtriAperti by rememberSaveable { mutableStateOf(false) }
+    // Con un Capo nuovo: l'id del Capo da cui parte con Duplica, null = scheda vuota.
+    var modello by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Cambia a ogni scheda aperta, anche da Nuovo a Nuovo ("Salva e aggiungi un altro"), così riparte da zero.
+    var scheda by rememberSaveable { mutableIntStateOf(0) }
+    val avvisi = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    fun apri(id: Long?, da: Long? = null) { aperto = id; modello = da; scheda++ }
 
     aperto?.let { id ->
         val iniziale = capi?.find { it.id == id }
+        val partenza = when {
+            id != NUOVO -> iniziale?.bozza()
+            modello != null -> capi?.find { it.id == modello }?.duplicato()
+            else -> Bozza()
+        }
         // Un Capo esistente si apre solo quando la lista è caricata (es. dopo che il processo è stato ricreato).
-        if (id == NUOVO || iniziale != null) {
-            CapoForm(
-                onSalva = { vm.salva(it); aperto = null },
-                onAnnulla = { aperto = null },
-                iniziale = iniziale,
-                onElimina = { scope.launch { preferitiDaEliminare = vm.quantiPreferiti(id) } },
-                onPartiDa = { aperto = null; iniziale?.let(onPartiDa) },
-            )
+        if (partenza != null) {
+            key(scheda) {
+                CapoForm(
+                    partenza = partenza,
+                    iniziale = iniziale,
+                    avvisi = avvisi,
+                    onSalva = { vm.salva(it); apri(null) },
+                    onSalvaEAltro = {
+                        vm.salva(it)
+                        apri(NUOVO)
+                        scope.launch { avvisi.showSnackbar("Capo salvato") }
+                    },
+                    onChiudi = { apri(null) },
+                    onElimina = { scope.launch { preferitiDaEliminare = vm.quantiPreferiti(id) } },
+                    onPartiDa = { apri(null); iniziale?.let(onPartiDa) },
+                    onDuplica = { apri(NUOVO, da = id) },
+                )
+            }
             preferitiDaEliminare?.let { quanti ->
                 ConfermaEliminazione(
                     quanti,
-                    onConferma = { vm.elimina(id); preferitiDaEliminare = null; aperto = null },
+                    onConferma = { vm.elimina(id); preferitiDaEliminare = null; apri(null) },
                     onAnnulla = { preferitiDaEliminare = null },
                 )
             }
@@ -134,7 +159,7 @@ fun GuardarobaScreen(
     Scaffold(
         contentWindowInsets = WindowInsets(0), // insets already applied by the outer Scaffold
         floatingActionButton = {
-            FloatingActionButton(onClick = { aperto = NUOVO }) {
+            FloatingActionButton(onClick = { apri(NUOVO) }) {
                 Icon(Icons.Filled.Add, contentDescription = "Aggiungi capo")
             }
         },
@@ -158,7 +183,7 @@ fun GuardarobaScreen(
                         TextButton(onClick = { vm.filtro = Filtro() }) { Text("Azzera filtri") }
                     }
                 } else {
-                    GrigliaCapi(filtrati, onApri = { aperto = it.id }, Modifier.weight(1f))
+                    GrigliaCapi(filtrati, onApri = { apri(it.id) }, Modifier.weight(1f))
                 }
             }
             if (filtriAperti) {
