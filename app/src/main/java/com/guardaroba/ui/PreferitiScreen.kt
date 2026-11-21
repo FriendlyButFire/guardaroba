@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.guardaroba.archivio.PreferitoConCapi
+import com.guardaroba.motore.Giudizio
 
 @Composable
 fun PreferitiScreen(vm: PreferitiViewModel = viewModel(factory = PreferitiViewModel.Factory)) {
@@ -90,7 +91,16 @@ private fun SchedaPreferito(preferito: PreferitoConCapi, onRinomina: () -> Unit,
                 // Al massimo 5 Capi per Outfit: entrano tutti in una riga.
                 preferito.capi.sortedBy { it.categoria }.forEach { RiquadroCapo(it, Modifier.weight(1f)) }
             }
-            Text(preferito.preferito.spiegazione, Modifier.padding(8.dp), style = MaterialTheme.typography.bodyLarge)
+            // Spiegazione e validità seguono i Capi di adesso; un Preferito non più valido resta, segnalato (ADR-0011).
+            when (val giudizio = preferito.giudizio()) {
+                is Giudizio.Valido -> Text(giudizio.spiegazione, Modifier.padding(8.dp), style = MaterialTheme.typography.bodyLarge)
+                is Giudizio.NonValido -> Text(
+                    "Non più valido: ${giudizio.motivo}",
+                    Modifier.padding(8.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
         }
     }
 }

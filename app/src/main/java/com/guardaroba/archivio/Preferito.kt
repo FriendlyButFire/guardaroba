@@ -11,9 +11,15 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Transaction
+import com.guardaroba.motore.Giudizio
+import com.guardaroba.motore.Outfit
+import com.guardaroba.motore.giudica
 import kotlinx.coroutines.flow.Flow
 
-/** Un Outfit salvato dall'utente, con la Spiegazione com'era al salvataggio. */
+/**
+ * Un Outfit salvato dall'utente. [spiegazione] è quella del salvataggio e non si mostra: vale quella di
+ * [PreferitoConCapi.giudizio], fatta con i Capi di adesso (ADR-0011).
+ */
 @Entity(tableName = "preferito")
 data class Preferito(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -45,7 +51,10 @@ data class PreferitoConCapi(
         associateBy = Junction(PreferitoCapo::class, parentColumn = "preferitoId", entityColumn = "capoId"),
     )
     val capi: List<Capo>,
-)
+) {
+    /** Il Giudizio del Motore sui Capi come sono adesso: dopo una modifica il Preferito può non essere più un Outfit valido. */
+    fun giudizio(): Giudizio = giudica(Outfit(capi.map { it.perMotore() }))
+}
 
 @Dao
 interface PreferitoDao {

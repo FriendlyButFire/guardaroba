@@ -11,7 +11,9 @@ import androidx.room.Upsert
 import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Motivo
 import com.guardaroba.motore.Stagione
+import com.guardaroba.motore.colore
 import kotlinx.coroutines.flow.Flow
+import com.guardaroba.motore.Capo as CapoMotore
 
 /** Un Capo del Guardaroba. I Colori sono salvati come id della Palette, mai come valori. */
 @Entity(tableName = "capo")
@@ -28,6 +30,9 @@ data class Capo(
     val percorsoFoto: String? = null,
     val creatoIl: Long = System.currentTimeMillis(),
 )
+
+/** Il Capo come lo vede il Motore. */
+fun Capo.perMotore() = CapoMotore(id, categoria, colore(colorePrincipale), motivo, coloreSecondario?.let(::colore), stagione)
 
 @Dao
 interface CapoDao {

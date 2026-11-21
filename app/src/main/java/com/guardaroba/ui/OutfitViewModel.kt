@@ -12,12 +12,12 @@ import com.guardaroba.archivio.Capo
 import com.guardaroba.archivio.CapoDao
 import com.guardaroba.archivio.GuardarobaDatabase
 import com.guardaroba.archivio.PreferitoDao
+import com.guardaroba.archivio.perMotore
 import com.guardaroba.motore.Consiglio
 import com.guardaroba.motore.Esito
 import com.guardaroba.motore.Richiesta
 import com.guardaroba.motore.Stagione
 import com.guardaroba.motore.coloriConsigliati
-import com.guardaroba.motore.colore
 import com.guardaroba.motore.proponi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
@@ -134,6 +134,3 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         }
     }
 }
-
-private fun Capo.perMotore() =
-    CapoMotore(id, categoria, colore(colorePrincipale), motivo, coloreSecondario?.let(::colore), stagione)
