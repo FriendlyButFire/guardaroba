@@ -124,9 +124,19 @@ fun OutfitScreen(vm: OutfitViewModel) {
                 }
                 is Esito.MancaCategoria ->
                     Messaggio(mancano(esito.categorie, vm.partenza?.let { stato?.capi?.get(it)?.categoria }, vm.filtroStagione != null))
-                Esito.NessunAbbinamento -> Messaggio(
-                    if (vm.partenza != null) "Nessun abbinamento per questo capo." else "Nessun abbinamento possibile con i colori e i motivi dei tuoi Capi.",
-                )
+                // Cosa non va e cosa fare, con le ragioni del Motore: niente vicoli ciechi.
+                is Esito.NessunAbbinamento -> Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        if (vm.partenza != null) "Nessun abbinamento per questo Capo" else "Nessun abbinamento",
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center,
+                    )
+                    Messaggio(esito.ragione.replaceFirstChar { it.uppercase() } + ".")
+                    Messaggio(esito.rimedio)
+                }
                 Esito.Esaurite -> Messaggio("Hai visto tutte le Proposte possibili.\nPremi Ricomincia per rivederle.")
             }
             stato?.consigliati?.takeIf { it.isNotEmpty() }?.let { ColoriConsigliati(it) }

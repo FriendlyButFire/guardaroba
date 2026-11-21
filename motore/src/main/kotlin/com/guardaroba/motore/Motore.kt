@@ -30,7 +30,8 @@ sealed interface Richiesta {
 sealed interface Esito {
     data class Proposta(val outfit: Outfit, val spiegazione: String) : Esito
     data class MancaCategoria(val categorie: List<Categoria>) : Esito
-    data object NessunAbbinamento : Esito
+    /** Nessun Outfit possibile è valido: [ragione] è quella di [giudica] più frequente, [rimedio] cosa aggiungere al Guardaroba. */
+    data class NessunAbbinamento(val ragione: String, val rimedio: String) : Esito
     data object Esaurite : Esito
 }
 
@@ -54,7 +55,13 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
     // shortcut: enumerazione completa degli Outfit possibili, adeguata fino a qualche centinaio di Capi (spec).
     val basi = capi(Categoria.SOPRA).flatMap { sopra -> capi(Categoria.SOTTO).map { sotto -> listOf(sopra, sotto) } } +
         capi(Categoria.INTERO).map { intero -> listOf(intero) }
-    fun proposte(candidati: List<Outfit>) = candidati.mapNotNull { o -> (giudica(o) as? Giudizio.Valido)?.let { Esito.Proposta(o, it.spiegazione) } }
+    val ragioni = mutableListOf<String>() // dei candidati rifiutati, per dire perché non c'è nessun abbinamento
+    fun proposte(candidati: List<Outfit>) = candidati.mapNotNull { o ->
+        when (val g = giudica(o)) {
+            is Giudizio.Valido -> Esito.Proposta(o, g.spiegazione)
+            is Giudizio.NonValido -> null.also { ragioni += g.ragione }
+        }
+    }
     // Con invernale o mezza stagione ogni Capospalla compatibile dà una Proposta; senza nessuno, l'Outfit resta senza.
     // Un Capospalla di partenza invece entra sempre: senza di lui non c'è Proposta.
     val capospallaDiPartenza = partenza?.categoria == Categoria.CAPOSPALLA
@@ -70,8 +77,23 @@ fun proponi(guardaroba: List<Capo>, richiesta: Richiesta, giàViste: Set<Set<Lon
             if (capospallaDiPartenza) conCapospalla else conCapospalla.ifEmpty { proposte(listOf(Outfit(base + scarpe + accessori))) }
         }
     }
-    if (valide.isEmpty()) return Esito.NessunAbbinamento
+    if (valide.isEmpty()) return nessunAbbinamento(ragioni)
     return valide.filter { it.outfit.idCapi !in giàViste }.randomOrNull(caso) ?: Esito.Esaurite
+}
+
+private const val TROPPI_MOTIVI = "più di un Capo non in tinta unita"
+
+/**
+ * Il perché di NessunAbbinamento tra le [ragioni] di [giudica] dei candidati, che in [proponi] sono sempre ben composti:
+ * vince il tipo più frequente tra troppi Motivi e Colori che non si abbinano; per i Colori si nomina il primo Outfit.
+ */
+private fun nessunAbbinamento(ragioni: List<String>): Esito.NessunAbbinamento {
+    val (motivi, colori) = ragioni.partition { it == TROPPI_MOTIVI }
+    return if (motivi.size >= colori.size) {
+        Esito.NessunAbbinamento(TROPPI_MOTIVI, "Aggiungi Capi in tinta unita: un Outfit regge un solo Capo a righe, quadri o fantasia.")
+    } else {
+        Esito.NessunAbbinamento(colori.first(), "Aggiungi un Capo neutro, come nero, bianco o denim: sta bene con qualsiasi colore.")
+    }
 }
 
 /** Le Categorie obbligatorie assenti tra [presenti]: Sopra e Sotto mancano solo se manca anche l'alternativa, l'Intero. */
@@ -98,7 +120,7 @@ fun giudica(outfit: Outfit): Giudizio {
         ?.let { (a, b) -> return Giudizio.NonValido("${a.nome} e ${b.nome} insieme") }
     mancanti(categorie.keys).takeIf { it.isNotEmpty() }
         ?.let { m -> return Giudizio.NonValido("manca " + m.joinToString(" e ") { it.nome }) }
-    if (capi.count { it.categoria != Categoria.ACCESSORI && it.motivo != Motivo.TINTA_UNITA } > 1) return Giudizio.NonValido("più di un Capo non in tinta unita")
+    if (capi.count { it.categoria != Categoria.ACCESSORI && it.motivo != Motivo.TINTA_UNITA } > 1) return Giudizio.NonValido(TROPPI_MOTIVI)
     val colori = coloriPrincipali(outfit)
     val elenco = colori.joinToString(" + ") { it.nome }
     return regola(colori)?.let { Giudizio.Valido("$elenco: $it") } ?: Giudizio.NonValido("$elenco non si abbinano")

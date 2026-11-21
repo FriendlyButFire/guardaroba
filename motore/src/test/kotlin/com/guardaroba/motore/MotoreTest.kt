@@ -99,7 +99,7 @@ class MotoreTest {
             capo(Categoria.SCARPE, "rosa"),
         )
 
-        assertEquals(Esito.NessunAbbinamento, genera(guardaroba))
+        assertTrue(genera(guardaroba) is Esito.NessunAbbinamento)
     }
 
     @Test
@@ -110,8 +110,8 @@ class MotoreTest {
             capo(Categoria.SCARPE, "nero"),
         )
 
-        assertEquals(Esito.NessunAbbinamento, genera(guardaroba))
-        assertEquals(Esito.NessunAbbinamento, genera(guardaroba, giàViste = setOf(guardaroba.map { it.id }.toSet())))
+        assertTrue(genera(guardaroba) is Esito.NessunAbbinamento)
+        assertTrue(genera(guardaroba, giàViste = setOf(guardaroba.map { it.id }.toSet())) is Esito.NessunAbbinamento)
     }
 
     @Test
@@ -221,7 +221,7 @@ class MotoreTest {
             capo(Categoria.SCARPE, "marrone", Motivo.QUADRI),
         )
 
-        assertEquals(Esito.NessunAbbinamento, genera(guardaroba))
+        assertTrue(genera(guardaroba) is Esito.NessunAbbinamento)
     }
 
     @Test
@@ -278,14 +278,14 @@ class MotoreTest {
         val scarpe = capo(Categoria.SCARPE, "arancione")
 
         assertEquals("blu royal + arancione: complementari", (genera(listOf(intero, scarpe)) as Esito.Proposta).spiegazione)
-        assertEquals(Esito.NessunAbbinamento, genera(listOf(capo(Categoria.INTERO, "rosso"), capo(Categoria.SCARPE, "giallo"))))
+        assertTrue(genera(listOf(capo(Categoria.INTERO, "rosso"), capo(Categoria.SCARPE, "giallo"))) is Esito.NessunAbbinamento)
     }
 
     @Test
     fun `un Intero a fantasia conta nel limite di un Capo a fantasia`() {
         val guardaroba = listOf(capo(Categoria.INTERO, "nero", Motivo.FANTASIA), capo(Categoria.SCARPE, "bianco", Motivo.RIGHE))
 
-        assertEquals(Esito.NessunAbbinamento, genera(guardaroba))
+        assertTrue(genera(guardaroba) is Esito.NessunAbbinamento)
     }
 
     @Test
@@ -367,5 +367,33 @@ class MotoreTest {
 
         assertEquals(setOf(setOf(sopra.id, sotto.id, scarpe.id)), tutte(guardaroba, Stagione.INVERNALE))
         assertEquals(setOf(setOf(sopra.id, sotto.id, giaccaLeggera.id, scarpe.id)), tutte(guardaroba, Stagione.MEZZA_STAGIONE))
+    }
+
+    @Test
+    fun `NessunAbbinamento dice la ragione di giudica e cosa aggiungere`() {
+        val colori = listOf(capo(Categoria.SOPRA, "rosso"), capo(Categoria.SOTTO, "giallo"), capo(Categoria.SCARPE, "nero"))
+        val motivi = listOf(capo(Categoria.SOPRA, "nero", Motivo.FANTASIA), capo(Categoria.SOTTO, "denim"), capo(Categoria.SCARPE, "marrone", Motivo.QUADRI))
+
+        assertEquals(
+            Esito.NessunAbbinamento("rosso + giallo + nero non si abbinano", "Aggiungi un Capo neutro, come nero, bianco o denim: sta bene con qualsiasi colore."),
+            genera(colori),
+        )
+        assertEquals(
+            Esito.NessunAbbinamento("più di un Capo non in tinta unita", "Aggiungi Capi in tinta unita: un Outfit regge un solo Capo a righe, quadri o fantasia."),
+            genera(motivi),
+        )
+    }
+
+    @Test
+    fun `NessunAbbinamento sceglie la ragione più frequente tra gli Outfit possibili`() {
+        val guardaroba = listOf(
+            capo(Categoria.SOPRA, "nero", Motivo.FANTASIA),
+            capo(Categoria.SOPRA, "nero", Motivo.RIGHE),
+            capo(Categoria.SOPRA, "rosso"),
+            capo(Categoria.SOTTO, "giallo", Motivo.QUADRI),
+            capo(Categoria.SCARPE, "nero"),
+        )
+
+        assertEquals("più di un Capo non in tinta unita", (genera(guardaroba) as Esito.NessunAbbinamento).ragione)
     }
 }

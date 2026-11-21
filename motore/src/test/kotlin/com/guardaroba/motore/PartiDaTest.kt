@@ -1,6 +1,7 @@
 package com.guardaroba.motore
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.random.Random
 
@@ -146,7 +147,7 @@ class PartiDaTest {
         val sopra = capo(Categoria.SOPRA, "rosso")
         val guardaroba = listOf(sopra, capo(Categoria.SOPRA, "bianco"), capo(Categoria.SOTTO, "giallo"), capo(Categoria.SCARPE, "nero"))
 
-        assertEquals(Esito.NessunAbbinamento, partiDa(guardaroba, sopra))
+        assertTrue(partiDa(guardaroba, sopra) is Esito.NessunAbbinamento)
     }
 
     @Test
