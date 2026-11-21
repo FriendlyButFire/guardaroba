@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -99,6 +100,9 @@ fun Colore.bordo(): BorderStroke {
 /** Testo leggibile sopra il campione. */
 fun Colore.testoSopra(): Color = if (l > 55) Color.Black else Color.White
 
+/** Le etichette cominciano con la maiuscola; i nomi del Motore ("estivo", "rosso", "t-shirt") sono minuscoli e restano così nei dati. */
+fun String.maiuscola() = replaceFirstChar { it.uppercase() }
+
 private const val NUOVO = 0L // l'id di un Capo non ancora salvato
 
 @Composable
@@ -164,7 +168,11 @@ fun GuardarobaScreen(
             }
         },
     ) { padding ->
-        val lista = capi ?: return@Scaffold // ancora in caricamento: niente stato vuoto a sproposito
+        val lista = capi ?: run {
+            // Ancora in caricamento: un indicatore, non lo stato vuoto a sproposito né uno schermo bianco.
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            return@Scaffold
+        }
         if (lista.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding).padding(32.dp), contentAlignment = Alignment.Center) {
                 Text("Il Guardaroba è vuoto.\nPremi + per aggiungere un capo.", textAlign = TextAlign.Center)
@@ -227,8 +235,8 @@ private fun FiltriAttivi(filtro: Filtro, onApri: () -> Unit, onCambia: (Filtro) 
             trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
         )
         filtro.categoria?.let { FiltroAttivo(it.nome) { onCambia(filtro.copy(categoria = null)) } }
-        filtro.stagione?.let { FiltroAttivo(it.nome) { onCambia(filtro.copy(stagione = null)) } }
-        filtro.colore?.let(::colore)?.let { FiltroAttivo(it.nome, it) { onCambia(filtro.copy(colore = null)) } }
+        filtro.stagione?.let { FiltroAttivo(it.nome.maiuscola()) { onCambia(filtro.copy(stagione = null)) } }
+        filtro.colore?.let(::colore)?.let { FiltroAttivo(it.nome.maiuscola(), it) { onCambia(filtro.copy(colore = null)) } }
         if (listOfNotNull(filtro.categoria, filtro.stagione, filtro.colore).size > 1) {
             TextButton(onClick = { onCambia(Filtro()) }) { Text("Azzera") }
         }
@@ -277,7 +285,7 @@ private fun PannelloFiltri(filtro: Filtro, quanti: Int, onCambia: (Filtro) -> Un
                     FilterChip(
                         selected = it == filtro.stagione,
                         onClick = { onCambia(filtro.copy(stagione = it.takeIf { it != filtro.stagione })) },
-                        label = { Text(it.nome) },
+                        label = { Text(it.nome.maiuscola()) },
                     )
                 }
             }
@@ -286,7 +294,7 @@ private fun PannelloFiltri(filtro: Filtro, quanti: Int, onCambia: (Filtro) -> Un
                     FilterChip(
                         selected = it.id == filtro.colore,
                         onClick = { onCambia(filtro.copy(colore = it.id.takeIf { it != filtro.colore })) },
-                        label = { Text(it.nome) },
+                        label = { Text(it.nome.maiuscola()) },
                         leadingIcon = { PuntoColore(it) },
                     )
                 }
@@ -344,7 +352,7 @@ fun RiquadroCapo(capo: Capo, modifier: Modifier = Modifier) {
     ) {
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                Text(capo.tipo, color = principale.testoSopra(), style = MaterialTheme.typography.labelLarge)
+                Text(capo.tipo.maiuscola(), color = principale.testoSopra(), style = MaterialTheme.typography.labelLarge)
             }
             // Il Colore secondario come fascia in basso nel riquadro.
             capo.coloreSecondario?.let { Box(Modifier.fillMaxWidth().weight(0.3f).background(colore(it).campione())) }
@@ -353,13 +361,13 @@ fun RiquadroCapo(capo: Capo, modifier: Modifier = Modifier) {
     }
 }
 
-/** La foto [nome] di [Foto], ritagliata a riempire [modifier]; niente finché non è caricata o se il file manca. */
+/** La foto [nome] di [Foto], ritagliata a riempire [modifier]; niente finché non è caricata o se il file manca. [intera] per la foto grande della scheda. */
 @Composable
-fun FotoCapo(nome: String, modifier: Modifier = Modifier) {
+fun FotoCapo(nome: String, modifier: Modifier = Modifier, intera: Boolean = false) {
     val context = LocalContext.current
     val immagine by produceState<ImageBitmap?>(null, nome) {
-        // Metà risoluzione (360 px) basta per una miniatura e dimezza la memoria della griglia.
-        val opzioni = BitmapFactory.Options().apply { inSampleSize = 2 }
+        // Nelle miniature basta metà risoluzione (360 px): dimezza la memoria della griglia.
+        val opzioni = BitmapFactory.Options().apply { inSampleSize = if (intera) 1 else 2 }
         value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(Foto(context).file(nome).path, opzioni)?.asImageBitmap() }
     }
     immagine?.let { Image(it, contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop) }

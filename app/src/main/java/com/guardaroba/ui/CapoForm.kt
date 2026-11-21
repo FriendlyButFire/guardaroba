@@ -17,6 +17,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -208,7 +213,8 @@ fun CapoForm(
         } },
     ) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            // La tastiera restringe la scheda (non sposta la finestra): la barra in alto resta, il campo scorre in vista.
+            Modifier.fillMaxSize().padding(padding).consumeWindowInsets(WindowInsets.navigationBars).imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             AreaFoto(
@@ -237,7 +243,7 @@ fun CapoForm(
             bozza.categoria?.let { scelta ->
                 Sezione("Tipo") {
                     scelta.tipi.forEach {
-                        FilterChip(selected = it == bozza.tipo, onClick = { bozza = bozza.copy(tipo = it) }, label = { Text(it) })
+                        FilterChip(selected = it == bozza.tipo, onClick = { bozza = bozza.copy(tipo = it) }, label = { Text(it.maiuscola()) })
                     }
                 }
             }
@@ -253,7 +259,8 @@ fun CapoForm(
                     onRimuovi = { bozza = bozza.copy(coloreSecondario = null); conSecondario = false },
                 ) { bozza = bozza.copy(coloreSecondario = it.takeIf { it != bozza.coloreSecondario }) }
             } else {
-                TextButton(onClick = { conSecondario = true }) {
+                // Senza il margine sinistro il testo si allinea ai titoli delle sezioni.
+                TextButton(onClick = { conSecondario = true }, contentPadding = PaddingValues(end = 12.dp)) {
                     Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
                     Spacer(Modifier.width(ButtonDefaults.IconSpacing))
                     Text("Aggiungi colore secondario")
@@ -262,12 +269,12 @@ fun CapoForm(
 
             Sezione("Motivo") {
                 Motivo.entries.forEach {
-                    FilterChip(selected = it == bozza.motivo, onClick = { bozza = bozza.copy(motivo = it) }, label = { Text(it.nome) })
+                    FilterChip(selected = it == bozza.motivo, onClick = { bozza = bozza.copy(motivo = it) }, label = { Text(it.nome.maiuscola()) })
                 }
             }
             Sezione("Stagione") {
                 Stagione.entries.forEach {
-                    FilterChip(selected = it == bozza.stagione, onClick = { bozza = bozza.copy(stagione = it) }, label = { Text(it.nome) })
+                    FilterChip(selected = it == bozza.stagione, onClick = { bozza = bozza.copy(stagione = it) }, label = { Text(it.nome.maiuscola()) })
                 }
             }
 
@@ -327,7 +334,7 @@ private fun AreaFoto(
         ) {
             when {
                 inCompressione -> CircularProgressIndicator()
-                percorso != null -> FotoCapo(percorso, Modifier.matchParentSize())
+                percorso != null -> FotoCapo(percorso, Modifier.matchParentSize(), intera = true)
                 else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Aggiungi foto", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -352,6 +359,7 @@ internal fun Sezione(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(titolo, style = stile)
         FlowRow(
+            Modifier.selectableGroup(), // una scelta per gruppo: TalkBack dice "selezionato" e la posizione
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) { voci() }
@@ -387,6 +395,6 @@ private fun CampioneColore(colore: Colore, selezionato: Boolean, onClick: () -> 
         ) {
             if (selezionato) Icon(Icons.Filled.Check, contentDescription = null, tint = colore.testoSopra())
         }
-        Text(colore.nome, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
+        Text(colore.nome.maiuscola(), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
     }
 }

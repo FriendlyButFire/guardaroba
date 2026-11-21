@@ -198,9 +198,6 @@ private fun descrizione(capo: Capo): String =
     "${capo.categoria.nome}: ${capo.tipo}, " + listOfNotNull(capo.colorePrincipale, capo.coloreSecondario).joinToString(" e ") { colore(it).nome } +
         (if (capo.motivo != Motivo.TINTA_UNITA) ", a ${capo.motivo.nome}" else "")
 
-/** Le etichette cominciano con la maiuscola; i nomi del Motore ("estivo", "rosso", "analoghi") sono minuscoli. */
-private fun String.maiuscola() = replaceFirstChar { it.uppercase() }
-
 /** I Colori della Palette che starebbero bene col Capo di partenza, raggruppati per regola; chiusi finché non si aprono. */
 @Composable
 private fun ColoriConsigliati(consigliati: List<Consiglio>) {
