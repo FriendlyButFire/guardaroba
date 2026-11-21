@@ -26,6 +26,7 @@ class OutfitViewModelTest {
             Capo(categoria = Categoria.SOPRA, tipo = "camicia", colorePrincipale = "bianco"),
             Capo(categoria = Categoria.SOTTO, tipo = "jeans", colorePrincipale = "denim"),
             Capo(categoria = Categoria.SCARPE, tipo = "sneakers", colorePrincipale = "nero"),
+            Capo(categoria = Categoria.ACCESSORI, tipo = "cintura", colorePrincipale = "marrone"),
         ).map { it.copy(id = db.capoDao().salva(it)) }
     }
     private val vm = OutfitViewModel(db.capoDao(), db.preferitoDao())
@@ -54,6 +55,18 @@ class OutfitViewModelTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         assertTrue(runBlocking { db.preferitoDao().tutti().first() }.isEmpty())
+    }
+
+    @Test
+    fun `cambiare un Capo che non è nella Proposta la lascia com'è`() {
+        vm.genera()
+        aspetta { vm.stato?.esito is Esito.Proposta }
+        val prima = vm.stato
+
+        runBlocking { db.capoDao().salva(capi[3].copy(colorePrincipale = "nero")) } // l'Accessorio: Genera non lo usa mai
+        repeat(20) { shadowOf(Looper.getMainLooper()).idle(); Thread.sleep(10) }
+
+        assertTrue(vm.stato === prima)
     }
 
     @Test

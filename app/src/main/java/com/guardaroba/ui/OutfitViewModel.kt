@@ -20,8 +20,6 @@ import com.guardaroba.motore.coloriConsigliati
 import com.guardaroba.motore.colore
 import com.guardaroba.motore.proponi
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -52,13 +50,24 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
     private val giàViste = mutableSetOf<Set<Long>>()
 
     init {
-        // Il Guardaroba è cambiato (Capo aggiunto, modificato, eliminato, import): la Proposta mostrata può citare Capi spariti
-        // o colori vecchi, e salvarla romperebbe la foreign key. Si riparte; con Parti da si rigenera se il Capo c'è ancora.
+        // ADR-0010: se un Capo della Proposta mostrata cambia o sparisce, la Proposta (e la sua Spiegazione) non vale più.
         viewModelScope.launch {
-            dao.tutti().distinctUntilChanged().drop(1).collect { capi ->
-                giàViste.clear()
-                stato = null
-                if (capi.none { it.id == partenza }) partenza = null else genera()
+            dao.tutti().collect { capi ->
+                val attuali = capi.associateBy { it.id }
+                if (partenza != null && partenza !in attuali) {
+                    partenza = null
+                    stato = null
+                    return@collect
+                }
+                val s = stato ?: return@collect
+                val proposta = s.esito as? Esito.Proposta ?: return@collect
+                if (proposta.outfit.idCapi.any { attuali[it] != s.capi[it] }) {
+                    // Un Outfit con un Capo cambiato è un Outfit nuovo: esce dalle già viste.
+                    val cambiati = s.capi.keys.filter { attuali[it] != s.capi[it] }.toSet()
+                    giàViste.removeAll { visto -> visto.any(cambiati::contains) }
+                    stato = null
+                    if (partenza != null) genera()
+                }
             }
         }
     }

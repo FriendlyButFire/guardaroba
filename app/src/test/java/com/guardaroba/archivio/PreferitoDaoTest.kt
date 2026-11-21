@@ -62,8 +62,8 @@ class PreferitoDaoTest {
         val (a, b, c, d) = db.inserisci(sopra, sotto, scarpe, altreScarpe).map { it.id }
         val dao = db.preferitoDao()
 
-        val colloquio = dao.salva("neutri", setOf(a, b, d), nome = "  colloquio ")
-        val senzaNome = dao.salva("neutri", setOf(a, b, c), nome = "   ")
+        val colloquio = dao.salva("neutri", setOf(a, b, d), nome = "  colloquio ")!!
+        val senzaNome = dao.salva("neutri", setOf(a, b, c), nome = "   ")!!
         suspend fun nomi() = dao.tutti().first().associate { it.preferito.id to it.preferito.nome }
         assertEquals(mapOf(colloquio to "colloquio", senzaNome to null), nomi())
 
@@ -79,7 +79,7 @@ class PreferitoDaoTest {
         val capi = db.inserisci(sopra, sotto, scarpe, altreScarpe)
         val (a, b, c, d) = capi.map { it.id }
         val dao = db.preferitoDao()
-        val eliminato = dao.salva("neutri", setOf(a, b, c))
+        val eliminato = dao.salva("neutri", setOf(a, b, c))!!
         val resta = dao.salva("neutri", setOf(a, b, d))
 
         dao.elimina(eliminato)
@@ -128,5 +128,19 @@ class PreferitoDaoTest {
         db.close()
 
         assertEquals(0, quanti)
+    }
+
+    @Test
+    fun `un Outfit con un Capo eliminato nel frattempo non si salva, e non rompe niente`() = runBlocking {
+        val db = GuardarobaDatabase.apri(context)
+        val (a, b, c) = db.inserisci(sopra, sotto, scarpe).map { it.id }
+        db.capoDao().eliminaConPreferiti(c)
+
+        val id = db.preferitoDao().salva("neutri", setOf(a, b, c))
+        val preferiti = db.preferitoDao().tutti().first()
+        db.close()
+
+        assertEquals(null, id)
+        assertEquals(emptyList<PreferitoConCapi>(), preferiti)
     }
 }

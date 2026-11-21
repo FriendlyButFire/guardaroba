@@ -53,12 +53,20 @@ interface PreferitoDao {
     @Query("SELECT * FROM preferito ORDER BY creatoIl DESC")
     fun tutti(): Flow<List<PreferitoConCapi>>
 
-    /** Salva l'Outfit tra i Preferiti; se c'è già (stesso insieme di Capi) restituisce l'id esistente e non ne tocca il nome. */
+    /**
+     * Salva l'Outfit tra i Preferiti; se c'è già (stesso insieme di Capi) restituisce l'id esistente e non ne tocca il nome.
+     * Se uno dei Capi non esiste più (eliminato mentre la Proposta era a schermo) non salva niente e restituisce null.
+     */
     @Transaction
-    suspend fun salva(spiegazione: String, idCapi: Set<Long>, nome: String? = null): Long =
-        conICapi(idCapi, idCapi.size) ?: inserisci(Preferito(nome = nome.pulito(), spiegazione = spiegazione)).also { id ->
+    suspend fun salva(spiegazione: String, idCapi: Set<Long>, nome: String? = null): Long? {
+        if (quantiCapi(idCapi) != idCapi.size) return null
+        return conICapi(idCapi, idCapi.size) ?: inserisci(Preferito(nome = nome.pulito(), spiegazione = spiegazione)).also { id ->
             inserisci(idCapi.map { PreferitoCapo(id, it) })
         }
+    }
+
+    @Query("SELECT COUNT(*) FROM capo WHERE id IN (:idCapi)")
+    suspend fun quantiCapi(idCapi: Set<Long>): Int
 
     /** Cambia il nome del Preferito; un nome vuoto lo toglie. */
     suspend fun rinomina(id: Long, nome: String) = aggiornaNome(id, nome.pulito())

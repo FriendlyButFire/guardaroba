@@ -222,15 +222,24 @@ note "Se non vuoi il Debug USB, al passo 4 c'è l'alternativa: copiare l'APK sul
 pause "Fatto? Premi Invio"
 
 stage "Collega il telefono"
-step "Collega il telefono al PC con un cavo USB dati."
-step "Sul telefono compare «Consentire il debug USB?»: spunta «Consenti sempre da questo computer» e tocca Consenti."
-step "Se il telefono chiede la modalità USB, scegli «Trasferimento file»."
-until [[ "$(adb_ devices | tr -d '\r')" == *$'\tdevice'* ]]; do
-  warn "adb non vede ancora un telefono autorizzato. Uscita di «adb devices»:"
-  adb_ devices | sed 's/^/    /'
-  pause "Controlla cavo e richiesta di autorizzazione, poi premi Invio per riprovare"
-done
-say "${GREEN}✓${RESET} Telefono collegato: $(adb_ shell getprop ro.product.model | tr -d '\r') (Android $(adb_ shell getprop ro.build.version.release | tr -d '\r'))"
+USB=1
+if ! command -v "$ADB" >/dev/null 2>&1; then
+  warn "adb non trovato: installa Android Studio (o le platform-tools), oppure usa il sideload al passo 4."
+  USB=0
+elif confirm "Colleghi il telefono via USB con il Debug USB attivo?"; then
+  step "Collega il telefono al PC con un cavo USB dati."
+  step "Sul telefono compare «Consentire il debug USB?»: spunta «Consenti sempre da questo computer» e tocca Consenti."
+  step "Se il telefono chiede la modalità USB, scegli «Trasferimento file»."
+  until [[ "$(adb_ devices | tr -d '\r')" == *$'\tdevice'* ]]; do
+    warn "adb non vede ancora un telefono autorizzato. Uscita di «adb devices»:"
+    adb_ devices | sed 's/^/    /'
+    pause "Controlla cavo e richiesta di autorizzazione, poi premi Invio per riprovare"
+  done
+  say "${GREEN}✓${RESET} Telefono collegato: $(adb_ shell getprop ro.product.model | tr -d '\r') (Android $(adb_ shell getprop ro.build.version.release | tr -d '\r'))"
+else
+  USB=0
+  note "Va bene: al passo 4 installi copiando l'APK sul telefono."
+fi
 pause
 
 stage "APK di debug"
@@ -240,36 +249,44 @@ if [[ -f "$APK" ]]; then
 fi
 if [[ ! -f "$APK" ]] || confirm "Vuoi ricompilarlo adesso (qualche minuto)?"; then
   say "Compilo dal drive X: (il percorso del repo contiene «Π», vedi README → Build)."
-  # X: punta alla radice del repo (README); da un worktree si compila in X:/.worktrees/NN.
-  CARTELLA=/x
-  if [[ -d /x ]]; then
-    [[ "$REPO" == */.worktrees/* ]] && CARTELLA="/x/.worktrees/${REPO##*/}"
-  else
-    cmd //c "subst X: $(cygpath -d "$REPO")"
+  # X: è la radice del repo (README); da un worktree si compila in X:/.worktrees/NN.
+  RADICE="${REPO%%/.worktrees/*}"
+  ATTESO="$(cygpath -d "$RADICE")"
+  ATTUALE="$(cmd //c subst | tr -d '\r' | sed -n 's/^X:\: => //p')"
+  if [[ -z "$ATTUALE" ]]; then
+    cmd //c "subst X: $ATTESO"
+  elif [[ "${ATTUALE,,}" != "${ATTESO,,}" ]]; then
+    warn "X: punta a $ATTUALE, non a questo repo ($ATTESO). Toglilo con: cmd //c \"subst X: /d\" e rilancia."
+    exit 1
   fi
-  [[ -f "$CARTELLA/gradlew" ]] || { warn "Non trovo gradlew in $CARTELLA: controlla il drive X: (cmd //c subst)."; exit 1; }
+  INIZIO=$(date +%s)
   ( export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" ANDROID_HOME="$LOCALAPPDATA/Android/Sdk"
-    cd "$CARTELLA" && ./gradlew assembleDebug )
-  [[ -f "$APK" ]] || { warn "APK non trovato dopo la build: guarda gli errori qui sopra."; exit 1; }
+    cd "/x${REPO#"$RADICE"}" && ./gradlew assembleDebug )
+  [[ -f "$APK" && $(date -r "$APK" +%s) -ge $INIZIO ]] || { warn "La build non ha prodotto un APK nuovo: guarda gli errori qui sopra."; exit 1; }
   say "${GREEN}✓${RESET} APK pronto."
 fi
 pause
 
 stage "Installa l'app"
-if confirm "Installo Guardaroba sul telefono con adb?"; then
-  adb_ install -r "$APK"
+if (( USB )) && confirm "Installo Guardaroba sul telefono con adb?"; then
+  if ! adb_ install -r "$APK"; then
+    warn "Installazione fallita. Con INSTALL_FAILED_UPDATE_INCOMPATIBLE c'è già un'app firmata diversamente:"
+    note "esporta i dati dall'app (Impostazioni → Esporta), poi: adb uninstall $PACCHETTO, e rilancia il wizard."
+    exit 1
+  fi
   say "${GREEN}✓${RESET} Installata."
 else
-  say "Alternativa senza Debug USB (sideload):"
+  USB=0
+  say "Installazione senza adb (sideload):"
   step "Copia $APK sul telefono (cavo in modalità Trasferimento file, oppure Drive/email a te stesso)."
   step "Sul telefono apri il file con l'app File e tocca Installa."
   step "Se chiede il permesso «Installa app sconosciute» per quell'app, concedilo e riprova."
-  note "Senza adb gli stadi 6 e 7 (verifica del backup) non si possono fare: puoi fermarti qui con Ctrl-C."
 fi
 pause
 
 stage "Primo avvio e dati di prova"
-adb_ shell monkey -p "$PACCHETTO" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || step "Apri Guardaroba dal launcher."
+if (( USB )); then adb_ shell monkey -p "$PACCHETTO" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true; fi
+step "Apri Guardaroba (se non si è già aperta)."
 say "Prepara qualche dato da ritrovare dopo il test del backup:"
 step "Guardaroba → + : aggiungi un Sopra, un Sotto e delle Scarpe; a uno metti una foto (Scatta o Dalla galleria)."
 step "Outfit → Genera → Salva: crea almeno un Preferito."
@@ -277,33 +294,55 @@ step "Impostazioni → Esporta: salva uno ZIP sul telefono. È la rete di sicure
 note "Controlla anche il tema scuro (Impostazioni del telefono → Display → Tema scuro): l'app lo segue."
 pause "Fatto? Premi Invio"
 
+RIUSCITO=0
 stage "Backup automatico di Android"
-say "Serve un account Google sul telefono con il backup attivo:"
-step "Impostazioni → Google → Backup → «Backup di Google One» attivo."
-pause "Attivo? Premi Invio"
-STATO=$(adb_ shell bmgr enabled | tr -d '\r')
-say "bmgr: $STATO"
-[[ "$STATO" == *enabled* ]] || warn "Il servizio di backup risulta spento: attivalo come sopra, poi rilancia il wizard."
-say "Avvio un backup immediato di $PACCHETTO (può richiedere un minuto)…"
-adb_ shell bmgr backupnow "$PACCHETTO" | sed 's/^/    /'
-note "Atteso: «Package $PACCHETTO with result: Success»."
-adb_ shell dumpsys backup | grep -A3 "$PACCHETTO" | sed 's/^/    /' || true
+if (( USB )); then
+  say "Serve un account Google sul telefono con il backup attivo:"
+  step "Impostazioni → Google → Backup → «Backup di Google One» attivo."
+  pause "Attivo? Premi Invio"
+  STATO=$(adb_ shell bmgr enabled | tr -d '\r') || true
+  say "bmgr: $STATO"
+  if [[ "$STATO" == *enabled* ]]; then
+    say "Avvio un backup immediato di $PACCHETTO (può richiedere un minuto)…"
+    ESITO=$(adb_ shell bmgr backupnow "$PACCHETTO" | tr -d '\r') || true
+    printf '%s\n' "$ESITO" | sed 's/^/    /'
+    adb_ shell dumpsys backup | tr -d '\r' | grep -A3 "$PACCHETTO" | sed 's/^/    /' || true
+    if [[ "$ESITO" == *"$PACCHETTO with result: Success"* ]]; then
+      RIUSCITO=1
+      say "${GREEN}✓${RESET} Backup riuscito."
+    else
+      warn "Il backup non risulta riuscito (atteso «Package $PACCHETTO with result: Success»)."
+      SKIPPED+=("backup automatico: bmgr backupnow non è riuscito, riprova più tardi o controlla l'account Google")
+    fi
+  else
+    warn "Il servizio di backup risulta spento: attivalo come sopra, poi rilancia il wizard."
+    SKIPPED+=("backup automatico: servizio spento (adb shell bmgr enabled)")
+  fi
+else
+  note "Senza adb non si può forzare né leggere il backup: salto questo passo."
+  SKIPPED+=("verifica del backup con bmgr: rilancia il wizard con il Debug USB")
+fi
 pause
 
 stage "Prova del ripristino (disinstalla e reinstalla)"
-warn "Disinstallare cancella i dati dell'app dal telefono: tornano solo se il backup qui sopra è riuscito."
-note "Se qualcosa va storto hai lo ZIP: Impostazioni → Importa."
-if confirm "Disinstallo e reinstallo Guardaroba adesso?"; then
-  adb_ uninstall "$PACCHETTO"
-  adb_ install "$APK"
-  adb_ shell monkey -p "$PACCHETTO" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
-  step "Controlla che Guardaroba, Preferiti e foto siano tornati."
-  note "Le foto scattate e non salvate (cache) non tornano: è voluto (ADR-0003)."
-  if ! confirm "I dati sono tornati?"; then
-    SKIPPED+=("ripristino dal backup non riuscito: Impostazioni → Importa con lo ZIP, e segnalalo nel ticket")
+if (( RIUSCITO )); then
+  warn "Disinstallare cancella i dati dell'app dal telefono: tornano solo dal backup appena fatto."
+  note "Se qualcosa va storto hai lo ZIP: Impostazioni → Importa."
+  if confirm "Disinstallo e reinstallo Guardaroba adesso?"; then
+    adb_ uninstall "$PACCHETTO"
+    adb_ install "$APK"
+    adb_ shell monkey -p "$PACCHETTO" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+    step "Controlla che Guardaroba, Preferiti e foto siano tornati."
+    note "Le foto scattate e non salvate (cache) non tornano: è voluto (ADR-0003)."
+    if ! confirm "I dati sono tornati?"; then
+      SKIPPED+=("ripristino dal backup non riuscito: Impostazioni → Importa con lo ZIP, e segnalalo nel ticket 18")
+    fi
+  else
+    SKIPPED+=("prova di ripristino: bash scripts/installa-sul-telefono.sh, stadio 7")
   fi
 else
-  SKIPPED+=("prova di ripristino: bash scripts/installa-sul-telefono.sh, stadio 7")
+  note "Senza un backup riuscito non disinstallo: perderesti i dati. Salto la prova."
+  SKIPPED+=("prova di ripristino: serve prima un backup riuscito (stadio 6)")
 fi
 
 finish

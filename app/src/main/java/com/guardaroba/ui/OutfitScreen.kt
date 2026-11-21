@@ -74,12 +74,8 @@ fun OutfitScreen(vm: OutfitViewModel) {
                         Text(if (salvata) "Tra i Preferiti" else "Salva")
                     }
                 }
-                is Esito.MancaCategoria -> Messaggio(
-                    (if (esito.categorie.size == 1) "Ti manca: " else "Ti mancano: ") +
-                        esito.categorie.joinToString(", ") { it.nome } + "." +
-                        (if (Categoria.SOPRA in esito.categorie || Categoria.SOTTO in esito.categorie) "\nAl posto di Sopra e Sotto va bene anche un Intero." else "") +
-                        "\nAggiungi i Capi che mancano nel Guardaroba" + (if (vm.filtroStagione != null) " o cambia filtro Stagione." else "."),
-                )
+                is Esito.MancaCategoria ->
+                    Messaggio(mancano(esito.categorie, vm.partenza?.let { stato?.capi?.get(it)?.categoria }, vm.filtroStagione != null))
                 Esito.NessunAbbinamento -> Messaggio(
                     if (vm.partenza != null) "Nessun abbinamento per questo capo." else "Nessun abbinamento possibile con i colori e i motivi dei tuoi Capi.",
                 )
@@ -126,6 +122,14 @@ private fun ColoriConsigliati(consigliati: List<Consiglio>) {
             }
         }
     }
+}
+
+/** Il messaggio di MancaCategoria; l'Intero è un'alternativa solo se il Capo di partenza ([partenza]) non è un Sopra o un Sotto (ADR-0008). */
+private fun mancano(categorie: List<Categoria>, partenza: Categoria?, conFiltro: Boolean): String {
+    val intero = (Categoria.SOPRA in categorie || Categoria.SOTTO in categorie) && partenza != Categoria.SOPRA && partenza != Categoria.SOTTO
+    return (if (categorie.size == 1) "Ti manca: " else "Ti mancano: ") + categorie.joinToString(", ") { it.nome } + "." +
+        (if (intero) "\nAl posto di Sopra e Sotto va bene anche un Intero." else "") +
+        "\nAggiungi i Capi che mancano nel Guardaroba" + (if (conFiltro) " o cambia filtro Stagione." else ".")
 }
 
 @Composable
