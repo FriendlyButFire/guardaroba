@@ -103,7 +103,7 @@ class MotoreTest {
     }
 
     @Test
-    fun `senza Outfit validi l'Esito è NessunAbbinamento`() {
+    fun `senza Outfit validi l'Esito è NessunAbbinamento, mai Esaurite`() {
         val guardaroba = listOf(
             capo(Categoria.SOPRA, "rosso"),
             capo(Categoria.SOTTO, "giallo"),
@@ -111,6 +111,7 @@ class MotoreTest {
         )
 
         assertEquals(Esito.NessunAbbinamento, genera(guardaroba))
+        assertEquals(Esito.NessunAbbinamento, genera(guardaroba, giàViste = setOf(guardaroba.map { it.id }.toSet())))
     }
 
     @Test
@@ -166,35 +167,18 @@ class MotoreTest {
     }
 
     @Test
-    fun `un altro non ripete le Proposte già viste e poi l'Esito è Esaurite`() {
-        val guardaroba = listOf(
-            capo(Categoria.SOPRA, "nero"), capo(Categoria.SOPRA, "bianco"),
-            capo(Categoria.SOTTO, "denim"),
-            capo(Categoria.SCARPE, "nero"),
-        )
-        val giàViste = mutableSetOf<Set<Long>>()
-
-        repeat(2) {
-            val proposta = genera(guardaroba, giàViste) as Esito.Proposta
-            assertTrue(giàViste.add(proposta.outfit.idCapi))
-        }
-        assertEquals(Esito.Esaurite, genera(guardaroba, giàViste))
-    }
-
-    @Test
-    fun `con N combinazioni valide si ottengono N Proposte distinte, poi Esaurite`() {
+    fun `con N Outfit validi un altro dà N Proposte distinte, poi Esaurite`() {
         val sopra = listOf("nero", "bianco", "beige").map { capo(Categoria.SOPRA, it) }
         val sotto = listOf("denim", "grigio_chiaro").map { capo(Categoria.SOTTO, it) }
         val scarpe = listOf("nero", "marrone").map { capo(Categoria.SCARPE, it) }
         val guardaroba = sopra + sotto + scarpe
-        val n = sopra.size * sotto.size * scarpe.size
+        val outfitValidi = sopra.size * sotto.size * scarpe.size
         val giàViste = mutableSetOf<Set<Long>>()
 
-        repeat(n) {
+        repeat(outfitValidi) {
             val proposta = genera(guardaroba, giàViste) as Esito.Proposta
             assertTrue(giàViste.add(proposta.outfit.idCapi))
         }
-        assertEquals(Esito.Esaurite, genera(guardaroba, giàViste))
         assertEquals(Esito.Esaurite, genera(guardaroba, giàViste))
     }
 
@@ -209,17 +193,6 @@ class MotoreTest {
         val prime = (0..19).map { seed -> (proponi(guardaroba, Richiesta.Genera(), emptySet(), Random(seed)) as Esito.Proposta).outfit.idCapi }
 
         assertTrue(prime.toSet().size > 1)
-    }
-
-    @Test
-    fun `senza Outfit validi l'Esito resta NessunAbbinamento anche dopo altre Proposte viste, mai Esaurite`() {
-        val guardaroba = listOf(
-            capo(Categoria.SOPRA, "rosso"),
-            capo(Categoria.SOTTO, "giallo"),
-            capo(Categoria.SCARPE, "nero"),
-        )
-
-        assertEquals(Esito.NessunAbbinamento, genera(guardaroba, giàViste = setOf(setOf(99L, 100L))))
     }
 
     @Test
