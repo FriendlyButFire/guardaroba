@@ -6,7 +6,7 @@ Stato a colpo d'occhio: [[roadmap]]. Branch `guardaroba-v1` (non ancora su `mast
 Fase **design con Impeccable**: tutte e quattro le schermate criticate e sistemate (ADR-0012 → 0015).
 - Preferiti: provati sul telefono dall'utente, ok.
 - Impostazioni: critica 24/40, 5 modifiche fatte e committate (`eb28ad7`, [[0015-impostazioni-ridisegnate]]). **Da provare sul telefono** (ricompilare: y): Esporta → Importa → Annulla / "Ripristina il Guardaroba di prima", "Controlla il backup del telefono", "Come scegliamo gli abbinamenti".
-- Difetto noto lasciato: tornando dalle regole lo scorrimento riparte quasi da capo (forse il backup ricalcolato accorcia la pagina; non verificato).
+- Scorrimento al ritorno dalle regole: corretto e verificato sull'emulatore (stato del backup calcolato sopra l'if, come lo scorrimento).
 - Poi: ricritica di Outfit, Guardaroba, Preferiti, Impostazioni → `/retro` → merge su `master` (solo su richiesta).
 - Script di installazione corretto: build giudicata dall'esito di Gradle; con un emulatore acceso sceglie da solo il telefono vero.
 

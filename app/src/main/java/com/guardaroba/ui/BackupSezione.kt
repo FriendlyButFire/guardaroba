@@ -11,24 +11,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.guardaroba.archivio.Backup
 import com.guardaroba.archivio.LivelloBackup
 import com.guardaroba.archivio.StatoBackup
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.util.Locale
 
-/** Quanto occupa il backup automatico rispetto ai 25 MB di Android, con gli avvisi dell'ADR-0003. */
+/** Quanto occupa il backup automatico rispetto ai 25 MB di Android, con gli avvisi dell'ADR-0003. [stato] è null finché si calcola. */
 @Composable
-fun BackupSezione() {
+fun BackupSezione(stato: StatoBackup?) {
     val context = LocalContext.current
-    // Ricalcolato ogni volta che si apre Impostazioni: la sezione esce dalla composizione cambiando scheda.
-    val stato by produceState<StatoBackup?>(null) { value = withContext(Dispatchers.IO) { Backup(context).stato() } }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Titolo("Backup automatico")
         val s = stato ?: return@Column

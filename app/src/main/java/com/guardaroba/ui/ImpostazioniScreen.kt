@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -30,6 +31,10 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.guardaroba.archivio.Backup
+import com.guardaroba.archivio.StatoBackup
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -45,6 +50,10 @@ fun ImpostazioniScreen(
 ) {
     var regole by rememberSaveable { mutableStateOf(false) }
     val scorrimento = rememberScrollState() // sopra l'if: tornando dalle regole si riparte da dove si era
+    // Sopra l'if anche questo: ricalcolato al ritorno, il Backup sarebbe vuoto per un attimo e la pagina più corta taglierebbe lo
+    // scorrimento. Si ricalcola a ogni apertura di Impostazioni: cambiando scheda la schermata esce dalla composizione.
+    val context = LocalContext.current
+    val backup by produceState<StatoBackup?>(null) { value = withContext(Dispatchers.IO) { Backup(context).stato() } }
     if (regole) {
         RegoleScreen(onIndietro = { regole = false })
         return
@@ -60,7 +69,7 @@ fun ImpostazioniScreen(
             Modifier.fillMaxSize().padding(padding).verticalScroll(scorrimento).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            BackupSezione()
+            BackupSezione(backup)
             // Un Esporta mentre Importa cancella le foto vecchie (o il contrario) farebbe uno ZIP incoerente: uno alla volta.
             EsportaSezione(avvisi, bloccato = importa.inCorso, vm = esporta)
             ImportaSezione(onImportato, avvisi, bloccato = esporta.inCorso, vm = importa)
@@ -69,7 +78,6 @@ fun ImpostazioniScreen(
                 Text("Le regole sui colori che l'app usa per ogni Proposta, con un esempio per ciascuna.")
                 OutlinedButton(onClick = { regole = true }) { Text("Come scegliamo gli abbinamenti") }
             }
-            val context = LocalContext.current
             val versione = remember { context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty() }
             Text("Guardaroba $versione", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
