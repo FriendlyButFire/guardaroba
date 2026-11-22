@@ -1,6 +1,6 @@
 # Roadmap
 
-Aggiornata il **2026-11-21**. Fase attuale: **design con Impeccable**: tutte e quattro le schermate sistemate; da provare sul telefono le Impostazioni, poi le ricritiche.
+Aggiornata il **2026-11-22**. Fase attuale: **design con Impeccable**: tutte e quattro le schermate sistemate e provate sul telefono; restano le ricritiche.
 
 Riferimenti: [[spec]] · [[GLOSSARY]] · [[PRODUCT]] · storico completo: `git log --oneline` (116 commit, branch `guardaroba-v1`, non ancora su `master`).
 
@@ -30,7 +30,7 @@ flowchart LR
   - [x] Outfit: critica 24/40 → 5 modifiche fatte ([[0012-schermata-outfit-ridisegnata]]); da ricriticare per il nuovo punteggio
   - [x] Guardaroba e scheda Capo: critica 22/40 → 5 modifiche fatte ([[0013-guardaroba-e-scheda-capo-ridisegnati]]): pulsante Filtri, scheda corta con barra ✕/Salva, conferma "Scartare le modifiche?", "Salva e aggiungi un altro", "Duplica", riga "Manca: …"; da ricriticare
   - [x] Preferiti: critica 23/40 → 5 modifiche fatte ([[0014-preferiti-ridisegnati]]): apertura in grande, "Non più valido" con rimedio, contrasto sul giallo, Spiegazione in frase, snackbar con Annulla; provati sul telefono; da ricriticare
-  - [x] Impostazioni: critica 24/40 → 5 modifiche fatte ([[0015-impostazioni-ridisegnate]]): copia automatica prima di Importa con "Ripristina", backup detto come condizione con "Ultima copia", Esporta pieno e Importa contornato, barra in alto e snackbar, pagina "Come scegliamo gli abbinamenti"; da provare sul telefono e ricriticare
+  - [x] Impostazioni: critica 24/40 → 5 modifiche fatte ([[0015-impostazioni-ridisegnate]]): copia automatica prima di Importa con "Ripristina", backup detto come condizione con "Ultima copia", Esporta pieno e Importa contornato, barra in alto e snackbar, pagina "Come scegliamo gli abbinamenti"; provate sul telefono; da ricriticare
 - [ ] **Retro**: problemi ricorrenti → regole nel CLAUDE.md
 - [ ] **Merge su `master`** e push: solo su tua richiesta
 
