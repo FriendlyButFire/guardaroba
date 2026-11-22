@@ -8,7 +8,7 @@ import com.guardaroba.motore.Stagione
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class PreferitiViewModelTest {
+class PerStagioneTest {
     private val camiciaEstiva = Capo(1, Categoria.SOPRA, "camicia", "bianco", stagione = Stagione.ESTIVO)
     private val jeans = Capo(2, Categoria.SOTTO, "jeans", "denim") // tutto l'anno
     private val cappottoInvernale = Capo(3, Categoria.CAPOSPALLA, "cappotto", "cammello", stagione = Stagione.INVERNALE)

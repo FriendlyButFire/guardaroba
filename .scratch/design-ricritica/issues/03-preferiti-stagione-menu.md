@@ -4,8 +4,16 @@
 
 **Blocked by:** nessuno
 
-**Status:** pronto-per-agente
+**Status:** chiuso
 
-- [ ] Chip Stagione sopra l'elenco, filtro con test sulla logica
-- [ ] Stato vuoto quando il filtro non lascia niente, con un modo per toglierlo
-- [ ] Menu ⋮ nel Preferito aperto; Elimina torna all'elenco e mostra lo snackbar con Annulla
+- [x] Chip Stagione sopra l'elenco, filtro con test sulla logica
+- [x] Stato vuoto quando il filtro non lascia niente, con un modo per toglierlo
+- [x] Menu ⋮ nel Preferito aperto; Elimina torna all'elenco e mostra lo snackbar con Annulla
+
+## Comments
+
+- Il filtro vive nel ViewModel come in Outfit (`mutableStateOf`): resta aprendo un Preferito o un Capo, si perde se Android chiude l'app; la scelta si tocca diretta, perché qui non c'è niente da azzerare come le "già viste" di Outfit.
+- Si guardano i Capi che il Preferito ha adesso: un Capo eliminato non conta più (il Preferito resta, segnalato "Non più valido").
+- Stato vuoto col filtro: "Nessun Preferito con tutti i Capi adatti a questa stagione." + "Mostra tutti i Preferiti"; i chip restano in vista.
+- Il Preferito aperto ora è uno Scaffold con lo stesso snackbar dell'elenco: "Preferito rinominato" compare lì, Elimina torna all'elenco dove compare Annulla.
+- Per ADR-0016 (07): ADR-0014 descriveva la barra del Preferito aperto con solo freccia e nome; ora ha anche il ⋮. La riga dei chip Stagione è copiata da `OutfitScreen.kt` (non toccabile qui): da unire in un composable comune.
