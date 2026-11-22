@@ -17,6 +17,12 @@ android {
         versionCode = 1
         versionName = "0.1"
     }
+    buildTypes {
+        release {
+            // shortcut: firmata con la chiave di debug (ADR-0017), si installa sopra la debug tenendo i dati; serve una chiave vera per pubblicarla.
+            signingConfig = signingConfigs.debug
+        }
+    }
     buildFeatures {
         compose = true
     }
