@@ -168,4 +168,50 @@ class OutfitViewModelTest {
         vm.partiDa(null) // "Genera a caso", Importa o Capo eliminato: l'avviso non vale più
         assertNull(vm.avvisoFuoriStagione)
     }
+
+    /** Un secondo Sopra neutro: con lui Genera ha due Proposte. */
+    private fun dueProposte() = runBlocking {
+        db.capoDao().salva(Capo(categoria = Categoria.SOPRA, tipo = "maglia", colorePrincipale = "grigio_chiaro"))
+    }
+
+    @Test
+    fun `Precedente torna alla Proposta di prima, anche da Esaurite, e poi non c'è altro`() {
+        dueProposte()
+        vm.genera()
+        aspetta { vm.stato?.esito is Esito.Proposta }
+        val prima = vm.stato?.esito
+        assertTrue(!vm.cèPrecedente)
+        vm.genera()
+        aspetta { vm.stato?.esito != prima }
+        vm.genera()
+        aspetta { vm.stato?.esito == Esito.Esaurite }
+
+        vm.precedente()
+        assertTrue(vm.stato?.esito != prima && vm.stato?.esito is Esito.Proposta)
+        vm.precedente()
+        assertTrue(vm.stato?.esito === prima)
+        assertTrue(!vm.cèPrecedente)
+    }
+
+    @Test
+    fun `una Proposta precedente con un Capo cambiato esce dalla cronologia, e tornare a Genera la svuota`() {
+        dueProposte()
+        vm.genera()
+        aspetta { vm.stato?.esito is Esito.Proposta }
+        val prima = vm.stato?.esito as Esito.Proposta
+        vm.genera()
+        aspetta { vm.stato?.esito != prima }
+        assertTrue(vm.cèPrecedente)
+
+        val sotto = capi.first { c -> prima.outfit.capi.any { it.id == c.id } && c.categoria == Categoria.SOTTO }
+        runBlocking { db.capoDao().salva(sotto.copy(colorePrincipale = "nero")) } // il Sotto è in tutte e due: rigenera anche la mostrata
+        aspetta { !vm.cèPrecedente }
+
+        vm.genera()
+        aspetta { vm.stato?.esito is Esito.Proposta }
+        vm.genera()
+        aspetta { vm.cèPrecedente }
+        vm.partiDa(null)
+        assertTrue(!vm.cèPrecedente)
+    }
 }

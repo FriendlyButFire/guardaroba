@@ -4,7 +4,11 @@
 
 **Blocked by:** nessuno
 
-**Status:** pronto-per-agente
+**Status:** chiuso
 
-- [ ] Riga con freccia al posto del pulsante contornato
-- [ ] Barra del backup leggibile a 0,3 MB su 25
+- [x] Riga con freccia al posto del pulsante contornato
+- [x] Barra del backup leggibile a 0,3 MB su 25
+
+## Comments
+
+- Riga fatta a mano (Row + freccia) invece di ListItem: il padding di ListItem la rientrava rispetto al resto della pagina. Barra del backup: minimo 2%.

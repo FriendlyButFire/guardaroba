@@ -4,8 +4,12 @@
 
 **Blocked by:** nessuno
 
-**Status:** in corso (agente principale)
+**Status:** chiuso
 
-- [ ] `OutfitViewModel.precedente()` / `cèPrecedente`, con test
-- [ ] Pulsante "Precedente" e Indietro di sistema in `OutfitScreen`
-- [ ] Indietro: prima la Proposta di prima, poi l'uscita da "Parti da"
+- [x] `OutfitViewModel.precedente()` / `cèPrecedente`, con test
+- [x] Pulsante "Precedente" e Indietro di sistema in `OutfitScreen`
+- [x] Indietro: prima la Proposta di prima, poi l'uscita da "Parti da"
+
+## Comments
+
+- Verificato sull'emulatore: Precedente, Indietro di sistema, da Esaurite. Tetto di 20 Proposte nella cronologia (shortcut nel codice).

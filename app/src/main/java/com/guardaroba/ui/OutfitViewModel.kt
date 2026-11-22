@@ -1,6 +1,7 @@
 package com.guardaroba.ui
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -54,6 +55,12 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         .map { lista -> lista.map { p -> p.capi.map { it.id }.toSet() }.toSet() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
+    /** Le Proposte mostrate prima di quella attuale, l'ultima in fondo: "Precedente" le riprende a ritroso. */
+    private val precedenti = mutableStateListOf<Esito.Proposta>()
+
+    /** C'è una Proposta a cui tornare con "Precedente". */
+    val cèPrecedente get() = precedenti.isNotEmpty()
+
     /** Gli Outfit già proposti in questa sessione, come insiemi di id dei Capi. */
     private val giàViste = mutableSetOf<Set<Long>>()
 
@@ -70,6 +77,8 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
                 val cambiati = ultimi.keys.filter { perMotore[it] != ultimi[it] }.toSet()
                 ultimi = perMotore
                 giàViste.removeAll { visto -> visto.any(cambiati::contains) }
+                // ADR-0010 anche per le Proposte di prima: con un Capo cambiato o sparito la loro Spiegazione non vale più.
+                precedenti.removeAll { p -> p.outfit.capi.any { perMotore[it.id] != it } }
                 val daCapo = partenza
                 if (daCapo != null && daCapo !in attuali) {
                     partiDa(null) // il Capo di partenza è sparito: si torna a Genera
@@ -99,8 +108,19 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
             val richiesta = capoDiPartenza?.let { Richiesta.PartiDa(it, filtroStagione) } ?: Richiesta.Genera(filtroStagione)
             val esito = proponi(perMotore, richiesta, giàViste)
             if (esito is Esito.Proposta) giàViste += esito.outfit.idCapi
+            (stato?.esito as? Esito.Proposta)?.let {
+                precedenti += it
+                if (precedenti.size > MAX_PRECEDENTI) precedenti.removeAt(0)
+            }
             stato = StatoOutfit(esito, capi.associateBy { it.id }, capoDiPartenza?.let(::coloriConsigliati).orEmpty())
         }
+    }
+
+    /** "Precedente": torna alla Proposta mostrata prima di quella attuale (o prima di Esaurite / Nessun abbinamento). */
+    fun precedente() {
+        val s = stato ?: return
+        val prima = precedenti.removeLastOrNull() ?: return
+        stato = s.copy(esito = prima)
     }
 
     /** Salva la Proposta mostrata tra i Preferiti ("Salva"), col [nome] opzionale; vale per qualsiasi Richiesta. */
@@ -116,6 +136,7 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
     fun partiDa(id: Long?) {
         partenza = id
         giàViste.clear()
+        precedenti.clear()
         stato = null
         avvisoFuoriStagione = null
         if (id != null) {
@@ -156,6 +177,9 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
     }
 
     companion object {
+        // shortcut: tetto fisso alla cronologia, basta per una mattina davanti all'armadio; da rivedere se serve tornare più indietro
+        private const val MAX_PRECEDENTI = 20
+
         val Factory = viewModelFactory {
             initializer {
                 val db = GuardarobaDatabase.get(this[APPLICATION_KEY]!!)

@@ -4,8 +4,12 @@
 
 **Blocked by:** 01
 
-**Status:** pronto-per-agente
+**Status:** chiuso
 
-- [ ] TopAppBar
-- [ ] Maiuscola nel chip "Parti da"
-- [ ] Titolo e spaziatura dei Colori consigliati
+- [x] TopAppBar
+- [x] Maiuscola nel chip "Parti da"
+- [x] Titolo e spaziatura dei Colori consigliati
+
+## Comments
+
+- Il titolo "Stanno bene con: <Tipo>" compare solo in "Parti da", l'unico caso con Colori consigliati. Un divisore separa il contenuto che scorre dai comandi fissi.
