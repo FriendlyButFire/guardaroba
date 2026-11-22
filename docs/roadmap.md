@@ -65,6 +65,8 @@ Le critiche complete sono in `.impeccable/critique/`.
 
 ## Solo tu
 
+- [x] Pubblicato su GitHub (2026-11-22), storia ripulita dai riferimenti personali
+- [ ] Dopo il primo push con la CI: controllare che il workflow `test` passi nella scheda Actions
 - [x] Rinominare le cartelle del percorso senza caratteri speciali (2026-11-22): niente più disco `X:`
 - [ ] `npx impeccable login`, opzionale, per lo storico delle critiche nel tuo account
 - [ ] Installare sul telefono dopo ogni fase di design: da Git Bash `bash scripts/installa-sul-telefono.sh`, da PowerShell `& "C:\Program Files\Git\bin\bash.exe" scripts/installa-sul-telefono.sh`
