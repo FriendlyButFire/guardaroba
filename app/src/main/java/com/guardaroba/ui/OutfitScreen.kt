@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -29,6 +30,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -37,14 +39,18 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -65,6 +71,7 @@ import com.guardaroba.motore.Esito
 import com.guardaroba.motore.Stagione
 import com.guardaroba.motore.perché
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OutfitScreen(vm: OutfitViewModel) {
     val stato = vm.stato
@@ -72,14 +79,15 @@ fun OutfitScreen(vm: OutfitViewModel) {
     vm.avvisoFuoriStagione?.let { AvvisoFuoriStagione(it, vm::chiudiAvviso) }
     // In alto i comandi che cambiano la Richiesta, in basso l'azione principale sempre nello stesso posto: scorre solo il contenuto.
     Column(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        TopAppBar(title = { Text("Outfit") }, windowInsets = WindowInsets(0)) // insets already applied by the outer Scaffold
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             vm.partenza?.let { id ->
                 // Il chip è l'uscita da "Parti da": toccarlo (o Indietro) torna alle Proposte da tutto il Guardaroba.
                 BackHandler { vm.partiDa(null) }
                 InputChip(
                     selected = true,
                     onClick = { vm.partiDa(null) },
-                    label = { Text("Parti da: " + (stato?.capi?.get(id)?.tipo ?: "…")) },
+                    label = { Text("Parti da: " + (stato?.capi?.get(id)?.tipo?.maiuscola() ?: "…")) },
                     trailingIcon = { Icon(Icons.Filled.Close, contentDescription = "Togli", Modifier.size(InputChipDefaults.IconSize)) },
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
@@ -159,20 +167,36 @@ fun OutfitScreen(vm: OutfitViewModel) {
                     }
                 }
             }
-            stato?.consigliati?.takeIf { it.isNotEmpty() }?.let { ColoriConsigliati(it) }
+            stato?.consigliati?.takeIf { it.isNotEmpty() }?.let { ColoriConsigliati(it, vm.partenza?.let { id -> stato.capi[id]?.tipo }) }
         }
-        val azione = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).heightIn(min = 56.dp)
-        if (stato?.esito == Esito.Esaurite) {
-            Button(onClick = vm::ricomincia, modifier = azione) { Text("Ricomincia") }
-        } else {
-            Button(onClick = vm::genera, modifier = azione) { Text(if (stato?.esito is Esito.Proposta) "Un altro" else "Genera") }
+        // Composto dopo quello di "Parti da", vince lui: Indietro riprende prima le Proposte di prima, poi esce da "Parti da".
+        BackHandler(enabled = vm.cèPrecedente, onBack = vm::precedente)
+        HorizontalDivider() // separa il contenuto che scorre dai comandi fissi
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            val alto = Modifier.heightIn(min = 56.dp)
+            if (vm.cèPrecedente) {
+                OutlinedButton(onClick = vm::precedente, modifier = alto) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
+                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                    Text("Precedente")
+                }
+            }
+            val principale = alto.weight(1f)
+            if (stato?.esito == Esito.Esaurite) {
+                Button(onClick = vm::ricomincia, modifier = principale) { Text("Ricomincia") }
+            } else {
+                Button(onClick = vm::genera, modifier = principale) { Text(if (stato?.esito is Esito.Proposta) "Un altro" else "Genera") }
+            }
         }
     }
 }
 
-/** I Colori della Palette che starebbero bene col Capo di partenza, raggruppati per regola; chiusi finché non si aprono. */
+/** I Colori della Palette che starebbero bene col Capo di partenza ([tipo]), raggruppati per regola; chiusi finché non si aprono. */
 @Composable
-private fun ColoriConsigliati(consigliati: List<Consiglio>) {
+private fun ColoriConsigliati(consigliati: List<Consiglio>, tipo: String?) {
     var aperti by rememberSaveable { mutableStateOf(false) }
     // Aperti finiscono sotto il pulsante principale: si portano in vista.
     val inVista = remember { BringIntoViewRequester() }
@@ -182,7 +206,7 @@ private fun ColoriConsigliati(consigliati: List<Consiglio>) {
             Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClickLabel = if (aperti) "Chiudi" else "Apri") { aperti = !aperti },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Colori consigliati", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            Text(tipo?.let { "Stanno bene con: ${it.maiuscola()}" } ?: "Colori consigliati", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
             Icon(if (aperti) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = null)
         }
         if (aperti) {
