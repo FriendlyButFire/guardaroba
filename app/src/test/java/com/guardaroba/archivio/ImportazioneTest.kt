@@ -68,6 +68,21 @@ class ImportazioneTest {
         db.preferitoDao().salva("altro", setOf(scarpe, gonna))
     }
 
+    /** `scripts/dati-di-prova.zip` (docs/agents/prove-su-dispositivo.md) è lo zip del JSON accanto, e si importa con Preferiti validi. */
+    @Test
+    fun `i dati di prova si importano`() {
+        val zip = File("../scripts/dati-di-prova.zip").readBytes()
+        val json = ZipInputStream(zip.inputStream()).use { it.nextEntry; it.readBytes().decodeToString() }
+        assertEquals(File("../scripts/dati-di-prova/guardaroba.json").readText(), json)
+
+        importa(zip)
+
+        assertEquals(14, runBlocking { db.capoDao().tutti().first() }.size)
+        val preferiti = runBlocking { db.preferitoDao().tutti().first() }
+        assertEquals(2, preferiti.size)
+        assertTrue(preferiti.all { it.giudizio() is com.guardaroba.motore.Giudizio.Valido })
+    }
+
     @Test
     fun `il giro export, import ripristina Capi, Preferiti e foto identici`() {
         riempi()

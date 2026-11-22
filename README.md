@@ -22,4 +22,5 @@ cd "/c/Users/<utente>/src/guardaroba"   # or .worktrees/NN
 
 - APK: `app/build/outputs/apk/debug/app-debug.apk`. Test reports: `*/build/reports/tests/`.
 - `local.properties` is git-ignored; each checkout or worktree needs one: `sdk.dir=C\:\\Users\\<utente>\\AppData\\Local\\Android\\Sdk` (the backslashes must be doubled).
+- Pre-commit hook in `.githooks/` (unit tests when code or build files change). Enable once per clone: `git config core.hooksPath .githooks`.
 - On a phone: `bash scripts/installa-sul-telefono.sh` is a step-by-step wizard (USB debugging, `adb install`, sideload alternative, `bmgr` backup/restore check).

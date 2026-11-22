@@ -1,0 +1,23 @@
+{
+  "versione": 1,
+  "capi": [
+    {"id": 1, "categoria": "SOPRA", "tipo": "t-shirt", "colorePrincipale": "bianco", "coloreSecondario": null, "motivo": "TINTA_UNITA", "stagione": "TUTTO_L_ANNO", "taglia": "M", "percorsoFoto": null, "creatoIl": 1},
+    {"id": 2, "categoria": "SOPRA", "tipo": "camicia", "colorePrincipale": "azzurro", "coloreSecondario": "bianco", "motivo": "RIGHE", "stagione": "MEZZA_STAGIONE", "taglia": "M", "percorsoFoto": null, "creatoIl": 2},
+    {"id": 3, "categoria": "SOPRA", "tipo": "maglione", "colorePrincipale": "bordeaux", "coloreSecondario": null, "motivo": "TINTA_UNITA", "stagione": "INVERNALE", "taglia": "L", "percorsoFoto": null, "creatoIl": 3},
+    {"id": 4, "categoria": "SOPRA", "tipo": "polo", "colorePrincipale": "rosso", "coloreSecondario": null, "motivo": "TINTA_UNITA", "stagione": "ESTIVO", "taglia": "M", "percorsoFoto": null, "creatoIl": 4},
+    {"id": 5, "categoria": "SOPRA", "tipo": "top", "colorePrincipale": "giallo", "coloreSecondario": "bianco", "motivo": "FANTASIA", "stagione": "ESTIVO", "taglia": null, "percorsoFoto": null, "creatoIl": 5},
+    {"id": 6, "categoria": "SOTTO", "tipo": "jeans", "colorePrincipale": "denim", "coloreSecondario": null, "motivo": "TINTA_UNITA", "stagione": "TUTTO_L_ANNO", "taglia": "32", "percorsoFoto": null, "creatoIl": 6},
+    {"id": 7, "categoria": "SOTTO", "tipo": "pantaloni", "colorePrincipale": "beige", "coloreSecondario": null, "motivo": "TINTA_UNITA", "stagione": "MEZZA_STAGIONE", "taglia": "32", "percorsoFoto": null, "creatoIl": 7},
+    {"id": 8, "categoria": "SOTTO", "tipo": "shorts", "colorePrincipale": "blu_navy", "coloreSecondario": null, "motivo": "TINTA_UNITA", "stagione": "ESTIVO", "taglia": "32", "percorsoFoto": null, "creatoIl": 8},
+    {"id": 9, "categoria": "INTERO", "tipo": "vestito", "colorePrincipale": "verde_salvia", "coloreSecondario": "panna", "motivo": "FANTASIA", "stagione": "ESTIVO", "taglia": "S", "percorsoFoto": null, "creatoIl": 9},
+    {"id": 10, "categoria": "CAPOSPALLA", "tipo": "cappotto", "colorePrincipale": "cammello", "coloreSecondario": null, "motivo": "TINTA_UNITA", "stagione": "INVERNALE", "taglia": "L", "percorsoFoto": null, "creatoIl": 10},
+    {"id": 11, "categoria": "SCARPE", "tipo": "sneakers", "colorePrincipale": "bianco", "coloreSecondario": "nero", "motivo": "TINTA_UNITA", "stagione": "TUTTO_L_ANNO", "taglia": "42", "percorsoFoto": null, "creatoIl": 11},
+    {"id": 12, "categoria": "SCARPE", "tipo": "stivali", "colorePrincipale": "marrone", "coloreSecondario": null, "motivo": "TINTA_UNITA", "stagione": "INVERNALE", "taglia": "42", "percorsoFoto": null, "creatoIl": 12},
+    {"id": 13, "categoria": "ACCESSORI", "tipo": "cintura", "colorePrincipale": "nero", "coloreSecondario": null, "motivo": "TINTA_UNITA", "stagione": "TUTTO_L_ANNO", "taglia": null, "percorsoFoto": null, "creatoIl": 13},
+    {"id": 14, "categoria": "ACCESSORI", "tipo": "sciarpa", "colorePrincipale": "senape", "coloreSecondario": null, "motivo": "QUADRI", "stagione": "INVERNALE", "taglia": null, "percorsoFoto": null, "creatoIl": 14}
+  ],
+  "preferiti": [
+    {"id": 1, "nome": "Mare", "spiegazione": "rosso + blu navy + bianco: un colore + neutri", "creatoIl": 15, "capi": [4, 8, 11]},
+    {"id": 2, "nome": null, "spiegazione": "bianco + beige + bianco: neutri", "creatoIl": 16, "capi": [1, 7, 11]}
+  ]
+}

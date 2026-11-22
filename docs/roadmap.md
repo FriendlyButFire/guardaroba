@@ -1,6 +1,6 @@
 # Roadmap
 
-Aggiornata il **2026-11-22**. Fase attuale: **retro**. Il design con Impeccable è finito: quattro schermate ridisegnate, ricritiche (29-32/40), correzioni ([[0016-correzioni-dalle-ricritiche]]) provate sul telefono.
+Aggiornata il **2026-11-22**. Fase attuale: **merge su master**, su tua richiesta. Il design con Impeccable è finito: quattro schermate ridisegnate, ricritiche (29-32/40), correzioni ([[0016-correzioni-dalle-ricritiche]]) provate sul telefono.
 
 Riferimenti: [[spec]] · [[GLOSSARY]] · [[PRODUCT]] · storico completo: `git log --oneline` (116 commit, branch `guardaroba-v1`, non ancora su `master`).
 
@@ -14,7 +14,8 @@ flowchart LR
   style E fill:#9c9
   style F fill:#9c9
   style G fill:#9c9
-  style H fill:#fc6
+  style H fill:#9c9
+  style I fill:#fc6
 ```
 
 ## Fasi
@@ -33,7 +34,7 @@ flowchart LR
   - [x] Preferiti: critica 23/40 → 5 modifiche fatte ([[0014-preferiti-ridisegnati]]): apertura in grande, "Non più valido" con rimedio, contrasto sul giallo, Spiegazione in frase, snackbar con Annulla; provati sul telefono; ricritica 29/40
   - [x] Impostazioni: critica 24/40 → 5 modifiche fatte ([[0015-impostazioni-ridisegnate]]): copia automatica prima di Importa con "Ripristina", backup detto come condizione con "Ultima copia", Esporta pieno e Importa contornato, barra in alto e snackbar, pagina "Come scegliamo gli abbinamenti"; provate sul telefono; ricritica 32/40
   - [x] Correzioni dalle ricritiche: Proposta di prima, "Come funziona", Stagione e ⋮ nei Preferiti, filtri dei soli Capi presenti, barre col titolo ([[0016-correzioni-dalle-ricritiche]], ticket in `.scratch/design-ricritica/`); provate sul telefono il 2026-11-22 (con mobile-mcp)
-- [ ] **Retro**: problemi ricorrenti → regole nel CLAUDE.md
+- [x] **Retro** (2026-11-22): hook pre-commit con i test, `CODING_STANDARDS.md` (ciclo di vita dello stato), `docs/agents/prove-su-dispositivo.md` con dati di prova in `scripts/dati-di-prova.zip`, puntatori in CLAUDE.md
 - [ ] **Merge su `master`** e push: solo su tua richiesta
 
 ## Build v1: ticket chiusi
@@ -66,7 +67,7 @@ Le critiche complete sono in `.impeccable/critique/`.
 
 - [x] Rinominare le cartelle del percorso senza caratteri speciali (2026-11-22): niente più disco `X:`
 - [ ] `npx impeccable login`, opzionale, per lo storico delle critiche nel tuo account
-- [ ] Installare sul telefono dopo ogni fase di design: `& "C:\Program Files\Git\bin\bash.exe" scripts/installa-sul-telefono.sh`
+- [ ] Installare sul telefono dopo ogni fase di design: da Git Bash `bash scripts/installa-sul-telefono.sh`, da PowerShell `& "C:\Program Files\Git\bin\bash.exe" scripts/installa-sul-telefono.sh`
 
 ## Pianificato dopo la v1
 
