@@ -13,3 +13,8 @@ local.properties
 .worktrees/
 captures/
 .cxx/
+# safety net: signing keys and stray build artifacts
+*.jks
+*.keystore
+*.apk
+*.aab
