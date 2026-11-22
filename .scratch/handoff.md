@@ -12,11 +12,11 @@ Fase **design con Impeccable**: tutte e quattro le schermate criticate e sistema
 
 ## Regole emerse in questa sessione (rispettarle)
 - **Telefono dell'utente (serial <serial-del-telefono>):** mai `adb` verso il telefono senza un sì esplicito. Ogni comando adb porta `-s emulator-5554`. Le installazioni sul telefono le fa l'utente con `scripts/installa-sul-telefono.sh`, da PowerShell: `& "C:\Program Files\Git\bin\bash.exe" scripts/installa-sul-telefono.sh`.
-- **Mai scrivere fuori dal repo.** Gli agenti usano solo il proprio worktree; scratch in `build/verifica/`. `/x` (subst del repo, serve per Gradle per via della «Π») solo in Bash; nei file tool diventa `C:\x`.
+- **Mai scrivere fuori dal repo.** Gli agenti usano solo il proprio worktree; scratch in `build/verifica/`.
 - **Niente Monitor** sui file esterni (consuma troppi token): un solo controllo `find -newermt` dopo ogni agente.
 - **Roadmap** aggiornata e committata a ogni fase principale finita.
 - **L'utente scrive in italiano:** rispondere in italiano.
-- Worktree ancora presenti sul disco da cancellare con `rm -rf` dal disco `/x/.worktrees` (percorsi troppo lunghi per git).
+- Worktree ancora presenti sul disco da cancellare con `rm -rf` da `.worktrees/` (percorsi troppo lunghi per git).
 - Per i fotogrammi dei video dell'utente: `ffmpeg` → `build/verifica/video/`, e il file originale non si sposta.
 
 ## Note utili

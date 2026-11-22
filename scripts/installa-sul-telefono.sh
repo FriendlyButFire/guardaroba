@@ -212,7 +212,7 @@ for s in "${ANDROID_HOME:-}" "${LOCALAPPDATA:+$(cygpath -u "$LOCALAPPDATA")/Andr
 done
 ADB="${ADB:-${SDK:+$SDK/platform-tools/adb.exe}}"
 [[ -n "$ADB" ]] || ADB="$(command -v adb || true)"
-# adb.exe è un programma Windows: vuole percorsi Windows, e quello corto (8.3) evita la «Π».
+# adb.exe è un programma Windows: vuole percorsi Windows (cygpath -w).
 adb_() { MSYS_NO_PATHCONV=1 "$ADB" "$@"; }
 
 TOTAL_STAGES=7
@@ -257,20 +257,10 @@ if [[ -f "$APK" ]]; then
   note "Creato il $(date -r "$APK" '+%d/%m/%Y %H:%M')."
 fi
 if [[ ! -f "$APK" ]] || confirm "Vuoi ricompilarlo adesso (qualche minuto)?"; then
-  say "Compilo dal drive X: (il percorso del repo contiene «Π», vedi README → Build)."
-  # X: è la radice del repo (README); da un worktree si compila in X:/.worktrees/NN.
-  RADICE="${REPO%%/.worktrees/*}"
-  ATTESO="$(cygpath -d "$RADICE")"
-  ATTUALE="$(cmd //c subst | tr -d '\r' | sed -n 's/^X:.: => //p')"
-  if [[ -z "$ATTUALE" ]]; then
-    cmd //c "subst X: $ATTESO"
-  elif [[ "${ATTUALE,,}" != "${ATTESO,,}" ]]; then
-    warn "X: punta a $ATTUALE, non a questo repo ($ATTESO). Toglilo con: cmd //c \"subst X: /d\" e rilancia."
-    exit 1
-  fi
+  say "Compilo (vedi README → Build)."
   # Si giudica dall'esito di Gradle, non dall'ora del file: se l'APK è già aggiornato Gradle non lo riscrive.
   ( export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" ANDROID_HOME="$SDK"
-    cd "/x${REPO#"$RADICE"}" && ./gradlew assembleDebug ) && [[ -f "$APK" ]] \
+    cd "$REPO" && ./gradlew assembleDebug ) && [[ -f "$APK" ]] \
     || { warn "La build non è riuscita: guarda gli errori qui sopra."; exit 1; }
   say "${GREEN}✓${RESET} APK pronto."
 fi
@@ -278,7 +268,7 @@ pause
 
 stage "Installa l'app"
 if (( USB )) && confirm "Installo Guardaroba sul telefono con adb?"; then
-  if ! adb_ install -r "$(cygpath -d "$APK")"; then
+  if ! adb_ install -r "$(cygpath -w "$APK")"; then
     warn "Installazione fallita. Con INSTALL_FAILED_UPDATE_INCOMPATIBLE c'è già un'app firmata diversamente:"
     note "esporta i dati dall'app (Impostazioni → Esporta), poi: adb uninstall $PACCHETTO, e rilancia il wizard."
     exit 1
@@ -339,7 +329,7 @@ if (( RIUSCITO )); then
   note "Se qualcosa va storto hai lo ZIP: Impostazioni → Importa."
   if confirm "Disinstallo e reinstallo Guardaroba adesso?"; then
     adb_ uninstall "$PACCHETTO"
-    adb_ install "$(cygpath -d "$APK")"
+    adb_ install "$(cygpath -w "$APK")"
     adb_ shell monkey -p "$PACCHETTO" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
     step "Controlla che Guardaroba, Preferiti e foto siano tornati."
     note "Le foto scattate e non salvate (cache) non tornano: è voluto (ADR-0003)."

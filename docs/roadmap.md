@@ -64,7 +64,7 @@ Le critiche complete sono in `.impeccable/critique/`.
 
 ## Solo tu
 
-- [ ] Rinominare `Π PROJECTS` senza caratteri speciali, se vuoi eliminare il disco `X:` (vedi README → Build)
+- [x] Rinominare le cartelle del percorso senza caratteri speciali (2026-11-22): niente più disco `X:`
 - [ ] `npx impeccable login`, opzionale, per lo storico delle critiche nel tuo account
 - [ ] Installare sul telefono dopo ogni fase di design: `& "C:\Program Files\Git\bin\bash.exe" scripts/installa-sul-telefono.sh`
 
