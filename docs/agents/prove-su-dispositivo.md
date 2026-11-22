@@ -5,7 +5,7 @@ Per provare l'app su un emulatore o sul telefono, a mano o con un agente.
 ## Dove
 
 - **Emulatore** `Pixel_8_Pro` (`emulator-5554`) di default: niente notifiche, niente dati dell'utente.
-- **Telefono dell'utente** (serial `<serial-del-telefono>`) solo con un sì esplicito, valido per quella volta. Il telefono è personale: le notifiche in arrivo rubano i tap (una volta un tap è finito su WhatsApp).
+- **Telefono dell'utente** (in `adb devices` è il serial che non inizia con `emulator-`) solo con un sì esplicito, valido per quella volta. Il telefono è personale: le notifiche in arrivo rubano i tap (una volta un tap è finito su WhatsApp).
 
 ## Strumenti
 
