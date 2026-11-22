@@ -1,6 +1,7 @@
 build/
 .gradle/
 node_modules/
+.claude/settings.json
 .claude/settings.local.json
 plans/
 build-notes/*
