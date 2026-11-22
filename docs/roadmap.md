@@ -1,6 +1,6 @@
 # Roadmap
 
-Aggiornata il **2026-11-22**. Fase attuale: **design con Impeccable**: tutte e quattro le schermate sistemate e provate sul telefono; ricritiche fatte (29-32/40) e correzioni fatte ([[0016-correzioni-dalle-ricritiche]]); da provare sul telefono.
+Aggiornata il **2026-11-22**. Fase attuale: **retro**. Il design con Impeccable è finito: quattro schermate ridisegnate, ricritiche (29-32/40), correzioni ([[0016-correzioni-dalle-ricritiche]]) provate sul telefono.
 
 Riferimenti: [[spec]] · [[GLOSSARY]] · [[PRODUCT]] · storico completo: `git log --oneline` (116 commit, branch `guardaroba-v1`, non ancora su `master`).
 
@@ -13,7 +13,8 @@ flowchart LR
   style D fill:#9c9
   style E fill:#9c9
   style F fill:#9c9
-  style G fill:#fc6
+  style G fill:#9c9
+  style H fill:#fc6
 ```
 
 ## Fasi
@@ -25,13 +26,13 @@ flowchart LR
 - [x] **Revisione finale** dell'intero branch: correzioni sulle foto, sulla sessione Outfit e sugli ADR
 - [x] **Decisioni dopo la revisione**: Preferito "Non più valido" ([[0011-preferito-giudicato-con-i-capi-di-adesso]]), popup capo fuori stagione ([[0008-parti-da-capo-ignora-filtro]])
 - [x] **Prova sul telefono** (Pixel 8 Pro) con `scripts/installa-sul-telefono.sh`, compreso il backup `bmgr`
-- [ ] **Design con Impeccable**: una schermata alla volta, critica → modifiche → prova sul telefono
+- [x] **Design con Impeccable**: una schermata alla volta, critica → modifiche → prova sul telefono
   - [x] [[PRODUCT]] scritto (`/impeccable init`)
   - [x] Outfit: critica 24/40 → 5 modifiche fatte ([[0012-schermata-outfit-ridisegnata]]); ricritica 29/40
   - [x] Guardaroba e scheda Capo: critica 22/40 → 5 modifiche fatte ([[0013-guardaroba-e-scheda-capo-ridisegnati]]): pulsante Filtri, scheda corta con barra ✕/Salva, conferma "Scartare le modifiche?", "Salva e aggiungi un altro", "Duplica", riga "Manca: …"; ricritica 29/40
   - [x] Preferiti: critica 23/40 → 5 modifiche fatte ([[0014-preferiti-ridisegnati]]): apertura in grande, "Non più valido" con rimedio, contrasto sul giallo, Spiegazione in frase, snackbar con Annulla; provati sul telefono; ricritica 29/40
   - [x] Impostazioni: critica 24/40 → 5 modifiche fatte ([[0015-impostazioni-ridisegnate]]): copia automatica prima di Importa con "Ripristina", backup detto come condizione con "Ultima copia", Esporta pieno e Importa contornato, barra in alto e snackbar, pagina "Come scegliamo gli abbinamenti"; provate sul telefono; ricritica 32/40
-  - [x] Correzioni dalle ricritiche: Proposta di prima, "Come funziona", Stagione e ⋮ nei Preferiti, filtri dei soli Capi presenti, barre col titolo ([[0016-correzioni-dalle-ricritiche]], ticket in `.scratch/design-ricritica/`); da provare sul telefono
+  - [x] Correzioni dalle ricritiche: Proposta di prima, "Come funziona", Stagione e ⋮ nei Preferiti, filtri dei soli Capi presenti, barre col titolo ([[0016-correzioni-dalle-ricritiche]], ticket in `.scratch/design-ricritica/`); provate sul telefono il 2026-11-22 (con mobile-mcp)
 - [ ] **Retro**: problemi ricorrenti → regole nel CLAUDE.md
 - [ ] **Merge su `master`** e push: solo su tua richiesta
 
