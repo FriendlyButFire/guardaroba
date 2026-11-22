@@ -78,12 +78,14 @@ fun OutfitScreen(vm: OutfitViewModel) {
     // Sopra l'if, come nelle Impostazioni: tornando dalle regole Proposta e scorrimento restano dov'erano.
     val scorrimento = rememberScrollState()
     var regole by rememberSaveable { mutableStateOf(false) }
+    var consigliatiAperti by rememberSaveable { mutableStateOf(false) } // anche questo: chiusi, la pagina si accorcerebbe
     if (regole) {
         RegoleScreen(onIndietro = { regole = false })
         return
     }
     val preferiti by vm.outfitPreferiti.collectAsStateWithLifecycle()
     vm.avvisoFuoriStagione?.let { AvvisoFuoriStagione(it, vm::chiudiAvviso) }
+    val capoDiPartenza = vm.partenza?.let { stato?.capi?.get(it) }
     // In alto i comandi che cambiano la Richiesta, in basso l'azione principale sempre nello stesso posto: scorre solo il contenuto.
     Column(Modifier.fillMaxSize()) {
         TopAppBar(title = { Text("Outfit") }, windowInsets = WindowInsets(0)) // insets already applied by the outer Scaffold
@@ -94,7 +96,7 @@ fun OutfitScreen(vm: OutfitViewModel) {
                 InputChip(
                     selected = true,
                     onClick = { vm.partiDa(null) },
-                    label = { Text("Parti da: " + (stato?.capi?.get(id)?.tipo?.maiuscola() ?: "…")) },
+                    label = { Text("Parti da: " + (capoDiPartenza?.tipo?.maiuscola() ?: "…")) },
                     trailingIcon = { Icon(Icons.Filled.Close, contentDescription = "Togli", Modifier.size(InputChipDefaults.IconSize)) },
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
@@ -174,7 +176,7 @@ fun OutfitScreen(vm: OutfitViewModel) {
                     }
                 }
             }
-            stato?.consigliati?.takeIf { it.isNotEmpty() }?.let { ColoriConsigliati(it, vm.partenza?.let { id -> stato.capi[id]?.tipo }) }
+            stato?.consigliati?.takeIf { it.isNotEmpty() }?.let { ColoriConsigliati(it, capoDiPartenza?.tipo, consigliatiAperti) { consigliatiAperti = it } }
         }
         // Composto dopo quello di "Parti da", vince lui: Indietro riprende prima le Proposte di prima, poi esce da "Parti da".
         BackHandler(enabled = vm.cèPrecedente, onBack = vm::precedente)
@@ -183,15 +185,15 @@ fun OutfitScreen(vm: OutfitViewModel) {
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            val alto = Modifier.heightIn(min = 56.dp)
+            val altezzaComandi = Modifier.heightIn(min = 56.dp)
             if (vm.cèPrecedente) {
-                OutlinedButton(onClick = vm::precedente, modifier = alto) {
+                OutlinedButton(onClick = vm::precedente, modifier = altezzaComandi) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
                     Spacer(Modifier.width(ButtonDefaults.IconSpacing))
                     Text("Precedente")
                 }
             }
-            val principale = alto.weight(1f)
+            val principale = altezzaComandi.weight(1f)
             if (stato?.esito == Esito.Esaurite) {
                 Button(onClick = vm::ricomincia, modifier = principale) { Text("Ricomincia") }
             } else {
@@ -203,14 +205,13 @@ fun OutfitScreen(vm: OutfitViewModel) {
 
 /** I Colori della Palette che starebbero bene col Capo di partenza ([tipo]), raggruppati per regola; chiusi finché non si aprono. */
 @Composable
-private fun ColoriConsigliati(consigliati: List<Consiglio>, tipo: String?) {
-    var aperti by rememberSaveable { mutableStateOf(false) }
+private fun ColoriConsigliati(consigliati: List<Consiglio>, tipo: String?, aperti: Boolean, onAperti: (Boolean) -> Unit) {
     // Aperti finiscono sotto il pulsante principale: si portano in vista.
     val inVista = remember { BringIntoViewRequester() }
     LaunchedEffect(aperti) { if (aperti) inVista.bringIntoView() }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClickLabel = if (aperti) "Chiudi" else "Apri") { aperti = !aperti },
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClickLabel = if (aperti) "Chiudi" else "Apri") { onAperti(!aperti) },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(tipo?.let { "Stanno bene con: ${it.maiuscola()}" } ?: "Colori consigliati", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)

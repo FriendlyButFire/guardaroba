@@ -83,7 +83,7 @@ fun ImpostazioniScreen(
                 Titolo("Abbinamenti")
                 // Una pagina, non un'azione: riga di elenco con freccia, non un pulsante come Importa.
                 Row(
-                    Modifier.fillMaxWidth().clickable { regole = true }.padding(vertical = 8.dp),
+                    Modifier.fillMaxWidth().clickable(onClickLabel = "Apri") { regole = true }.padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {

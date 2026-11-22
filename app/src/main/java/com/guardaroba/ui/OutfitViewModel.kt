@@ -100,15 +100,18 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
 
     /** Chiede una nuova Proposta al Motore ("Genera" e "un altro"), partendo dal Capo di [partenza] se c'è. */
     fun genera() {
+        val mostrato = stato
         viewModelScope.launch {
             val capi = dao.tutti().first()
+            // Toccato "Precedente" (o altro) mentre si aspettava: vale quello, questa Proposta non serve più.
+            if (stato?.esito !== mostrato?.esito) return@launch // il collector aggiorna foto e Tipo senza cambiare l'Esito
             val perMotore = capi.map { it.perMotore() }
             // Se il Capo di partenza è stato eliminato nel frattempo, lo toglie da [partenza] il collector in init.
             val capoDiPartenza = perMotore.find { it.id == partenza }
             val richiesta = capoDiPartenza?.let { Richiesta.PartiDa(it, filtroStagione) } ?: Richiesta.Genera(filtroStagione)
             val esito = proponi(perMotore, richiesta, giàViste)
             if (esito is Esito.Proposta) giàViste += esito.outfit.idCapi
-            (stato?.esito as? Esito.Proposta)?.let {
+            (mostrato?.esito as? Esito.Proposta)?.let {
                 precedenti += it
                 if (precedenti.size > MAX_PRECEDENTI) precedenti.removeAt(0)
             }
@@ -150,6 +153,7 @@ class OutfitViewModel(private val dao: CapoDao, private val preferiti: Preferito
         if (stagione == filtroStagione) return // ritoccare il filtro scelto non è cambiarlo
         filtroStagione = stagione
         giàViste.clear()
+        precedenti.clear() // le Proposte di prima potrebbero non andare con il filtro nuovo
         if (partenza != null) avvisaSeFuoriStagione()
     }
 

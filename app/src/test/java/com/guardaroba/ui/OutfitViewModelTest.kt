@@ -13,7 +13,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -180,21 +183,22 @@ class OutfitViewModelTest {
         vm.genera()
         aspetta { vm.stato?.esito is Esito.Proposta }
         val prima = vm.stato?.esito
-        assertTrue(!vm.cèPrecedente)
+        assertFalse(vm.cèPrecedente)
         vm.genera()
         aspetta { vm.stato?.esito != prima }
         vm.genera()
         aspetta { vm.stato?.esito == Esito.Esaurite }
 
         vm.precedente()
-        assertTrue(vm.stato?.esito != prima && vm.stato?.esito is Esito.Proposta)
+        assertNotSame(prima, vm.stato?.esito)
+        assertTrue(vm.stato?.esito is Esito.Proposta)
         vm.precedente()
-        assertTrue(vm.stato?.esito === prima)
-        assertTrue(!vm.cèPrecedente)
+        assertSame(prima, vm.stato?.esito)
+        assertFalse(vm.cèPrecedente)
     }
 
     @Test
-    fun `una Proposta precedente con un Capo cambiato esce dalla cronologia, e tornare a Genera la svuota`() {
+    fun `una Proposta precedente con un Capo cambiato esce dalla cronologia, cambiare Stagione o tornare a Genera la svuota`() {
         dueProposte()
         vm.genera()
         aspetta { vm.stato?.esito is Esito.Proposta }
@@ -211,7 +215,13 @@ class OutfitViewModelTest {
         aspetta { vm.stato?.esito is Esito.Proposta }
         vm.genera()
         aspetta { vm.cèPrecedente }
+        vm.scegliStagione(Stagione.ESTIVO)
+        assertFalse(vm.cèPrecedente)
+        vm.genera()
+        aspetta { vm.stato?.esito is Esito.Proposta }
+        vm.genera()
+        aspetta { vm.cèPrecedente }
         vm.partiDa(null)
-        assertTrue(!vm.cèPrecedente)
+        assertFalse(vm.cèPrecedente)
     }
 }
