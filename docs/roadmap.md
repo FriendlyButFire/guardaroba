@@ -1,6 +1,6 @@
 # Roadmap
 
-Aggiornata il **2026-11-22**. Fase attuale: **design con Impeccable**: tutte e quattro le schermate sistemate e provate sul telefono; restano le ricritiche.
+Aggiornata il **2026-11-22**. Fase attuale: **design con Impeccable**: tutte e quattro le schermate sistemate e provate sul telefono; ricritiche fatte (29-32/40); in attesa della tua scelta sulle correzioni.
 
 Riferimenti: [[spec]] · [[GLOSSARY]] · [[PRODUCT]] · storico completo: `git log --oneline` (116 commit, branch `guardaroba-v1`, non ancora su `master`).
 
@@ -27,10 +27,10 @@ flowchart LR
 - [x] **Prova sul telefono** (Pixel 8 Pro) con `scripts/installa-sul-telefono.sh`, compreso il backup `bmgr`
 - [ ] **Design con Impeccable**: una schermata alla volta, critica → modifiche → prova sul telefono
   - [x] [[PRODUCT]] scritto (`/impeccable init`)
-  - [x] Outfit: critica 24/40 → 5 modifiche fatte ([[0012-schermata-outfit-ridisegnata]]); da ricriticare per il nuovo punteggio
-  - [x] Guardaroba e scheda Capo: critica 22/40 → 5 modifiche fatte ([[0013-guardaroba-e-scheda-capo-ridisegnati]]): pulsante Filtri, scheda corta con barra ✕/Salva, conferma "Scartare le modifiche?", "Salva e aggiungi un altro", "Duplica", riga "Manca: …"; da ricriticare
-  - [x] Preferiti: critica 23/40 → 5 modifiche fatte ([[0014-preferiti-ridisegnati]]): apertura in grande, "Non più valido" con rimedio, contrasto sul giallo, Spiegazione in frase, snackbar con Annulla; provati sul telefono; da ricriticare
-  - [x] Impostazioni: critica 24/40 → 5 modifiche fatte ([[0015-impostazioni-ridisegnate]]): copia automatica prima di Importa con "Ripristina", backup detto come condizione con "Ultima copia", Esporta pieno e Importa contornato, barra in alto e snackbar, pagina "Come scegliamo gli abbinamenti"; provate sul telefono; da ricriticare
+  - [x] Outfit: critica 24/40 → 5 modifiche fatte ([[0012-schermata-outfit-ridisegnata]]); ricritica 29/40
+  - [x] Guardaroba e scheda Capo: critica 22/40 → 5 modifiche fatte ([[0013-guardaroba-e-scheda-capo-ridisegnati]]): pulsante Filtri, scheda corta con barra ✕/Salva, conferma "Scartare le modifiche?", "Salva e aggiungi un altro", "Duplica", riga "Manca: …"; ricritica 29/40
+  - [x] Preferiti: critica 23/40 → 5 modifiche fatte ([[0014-preferiti-ridisegnati]]): apertura in grande, "Non più valido" con rimedio, contrasto sul giallo, Spiegazione in frase, snackbar con Annulla; provati sul telefono; ricritica 29/40
+  - [x] Impostazioni: critica 24/40 → 5 modifiche fatte ([[0015-impostazioni-ridisegnate]]): copia automatica prima di Importa con "Ripristina", backup detto come condizione con "Ultima copia", Esporta pieno e Importa contornato, barra in alto e snackbar, pagina "Come scegliamo gli abbinamenti"; provate sul telefono; ricritica 32/40
 - [ ] **Retro**: problemi ricorrenti → regole nel CLAUDE.md
 - [ ] **Merge su `master`** e push: solo su tua richiesta
 
@@ -53,10 +53,10 @@ flowchart LR
 
 | Schermata | Critica | Dopo le modifiche |
 |---|---|---|
-| Outfit | 24/40 | da ricriticare |
-| Guardaroba e scheda Capo | 22/40 | da ricriticare |
-| Preferiti | 23/40 | da ricriticare |
-| Impostazioni | 24/40 | da ricriticare |
+| Outfit | 24/40 | 29/40 |
+| Guardaroba e scheda Capo | 22/40 | 29/40 |
+| Preferiti | 23/40 | 29/40 |
+| Impostazioni | 24/40 | 32/40 |
 
 Le critiche complete sono in `.impeccable/critique/`.
 
