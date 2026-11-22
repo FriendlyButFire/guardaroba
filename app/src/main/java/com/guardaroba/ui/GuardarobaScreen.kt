@@ -49,6 +49,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -77,7 +78,6 @@ import com.guardaroba.archivio.Capo
 import com.guardaroba.archivio.Foto
 import com.guardaroba.motore.Categoria
 import com.guardaroba.motore.Colore
-import com.guardaroba.motore.PALETTE
 import com.guardaroba.motore.Stagione
 import com.guardaroba.motore.colore
 import kotlinx.coroutines.Dispatchers
@@ -113,6 +113,7 @@ fun String.maiuscola() = replaceFirstChar { it.uppercase() }
 
 private const val NUOVO = 0L // l'id di un Capo non ancora salvato
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuardarobaScreen(
     onPartiDa: (Capo) -> Unit,
@@ -175,6 +176,7 @@ fun GuardarobaScreen(
     }
     Scaffold(
         contentWindowInsets = WindowInsets(0), // insets already applied by the outer Scaffold
+        topBar = { TopAppBar(title = { Text("Guardaroba") }, windowInsets = WindowInsets(0)) },
         floatingActionButton = {
             FloatingActionButton(onClick = { apri(NUOVO) }) {
                 Icon(Icons.Filled.Add, contentDescription = "Aggiungi capo")
@@ -208,7 +210,7 @@ fun GuardarobaScreen(
                 }
             }
             if (filtriAperti) {
-                PannelloFiltri(vm.filtro, filtrati.size, onCambia = { vm.filtro = it }, onChiudi = { filtriAperti = false })
+                PannelloFiltri(vm.filtro, lista, filtrati.size, onCambia = { vm.filtro = it }, onChiudi = { filtriAperti = false })
             }
         }
     }
@@ -272,10 +274,10 @@ private fun PuntoColore(colore: Colore) {
     Box(Modifier.size(16.dp).background(colore.campione(), CircleShape).border(colore.bordo(), CircleShape))
 }
 
-/** Il pannello dal basso con tutti i filtri: si applicano subito; toccare di nuovo la voce scelta la toglie. */
+/** Il pannello dal basso con i filtri dei [capi] presenti: si applicano subito; toccare di nuovo la voce scelta la toglie. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PannelloFiltri(filtro: Filtro, quanti: Int, onCambia: (Filtro) -> Unit, onChiudi: () -> Unit) {
+private fun PannelloFiltri(filtro: Filtro, capi: List<Capo>, quanti: Int, onCambia: (Filtro) -> Unit, onChiudi: () -> Unit) {
     val stato = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     // shortcut: Material3 1.4.0 pads the sheet content by the status-bar inset minus the sheet offset, so the sheet's height
@@ -293,7 +295,7 @@ private fun PannelloFiltri(filtro: Filtro, quanti: Int, onCambia: (Filtro) -> Un
         ) {
             Text("Filtri", style = MaterialTheme.typography.titleLarge)
             Sezione("Categoria") {
-                Categoria.entries.forEach {
+                filtro.categorie(capi).forEach {
                     FilterChip(
                         selected = it == filtro.categoria,
                         onClick = { onCambia(filtro.copy(categoria = it.takeIf { it != filtro.categoria })) },
@@ -311,7 +313,7 @@ private fun PannelloFiltri(filtro: Filtro, quanti: Int, onCambia: (Filtro) -> Un
                 }
             }
             Sezione("Colore") {
-                PALETTE.forEach {
+                filtro.colori(capi).forEach {
                     FilterChip(
                         selected = it.id == filtro.colore,
                         onClick = { onCambia(filtro.copy(colore = it.id.takeIf { it != filtro.colore })) },
