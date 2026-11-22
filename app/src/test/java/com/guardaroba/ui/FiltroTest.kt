@@ -52,7 +52,7 @@ class FiltroTest {
     @Test
     fun `le opzioni sono solo le Categorie e i Colori principali dei Capi, in ordine`() {
         assertEquals(listOf(Categoria.SOPRA, Categoria.SOTTO, Categoria.CAPOSPALLA), Filtro().categorie(guardaroba))
-        // Nell'ordine della Palette; il Colore secondario non conta (come negli abbinamenti).
+        // Nell'ordine della Palette; un Colore solo secondario non diventa un'opzione.
         val conSecondarioRosso = jeansTuttoLAnno.copy(id = 4, coloreSecondario = "rosso")
         assertEquals(listOf("bianco", "cammello", "denim"), Filtro().colori(guardaroba + conSecondarioRosso).map { it.id })
     }

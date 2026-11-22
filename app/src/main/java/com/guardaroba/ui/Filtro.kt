@@ -21,6 +21,6 @@ data class Filtro(val categoria: Categoria? = null, val colore: String? = null, 
      */
     fun categorie(capi: List<Capo>) = Categoria.entries.filter { c -> c == categoria || capi.any { it.categoria == c } }
 
-    /** I Colori del pannello Filtri, nell'ordine della Palette: solo i principali, perché il secondario non conta negli abbinamenti. */
+    /** I Colori del pannello Filtri, nell'ordine della Palette: solo i principali, per tenerlo corto; scelto un Colore, [ammette] trova anche i Capi che lo hanno come secondario. */
     fun colori(capi: List<Capo>) = PALETTE.filter { c -> c.id == colore || capi.any { it.colorePrincipale == c.id } }
 }

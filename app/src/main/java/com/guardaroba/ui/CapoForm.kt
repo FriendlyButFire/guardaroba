@@ -248,7 +248,7 @@ fun CapoForm(
                     scelta.tipi.forEach {
                         FilterChip(selected = it == bozza.tipo, onClick = { bozza = bozza.copy(tipo = it) }, label = { Text(it.maiuscola()) })
                     }
-                } else Box(Modifier.heightIn(min = 48.dp), contentAlignment = Alignment.CenterStart) { // alto come una riga di chip
+                } else Box(Modifier.heightIn(min = 48.dp), contentAlignment = Alignment.CenterStart) { // 48 dp: alta come una riga di FilterChip (area di tocco minima)
                     Text("Scegli prima la Categoria", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
