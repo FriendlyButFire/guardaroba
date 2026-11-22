@@ -3,7 +3,8 @@ build/
 node_modules/
 .claude/settings.local.json
 plans/
-build-notes/
+build-notes/*
+!build-notes/color-harmony.md
 .claude/worktrees/
 *.iml
 .idea/
