@@ -1,6 +1,6 @@
 # Roadmap
 
-Aggiornata il **2026-11-22**. Fase attuale: **design con Impeccable**: tutte e quattro le schermate sistemate e provate sul telefono; ricritiche fatte (29-32/40); in attesa della tua scelta sulle correzioni.
+Aggiornata il **2026-11-22**. Fase attuale: **design con Impeccable**: tutte e quattro le schermate sistemate e provate sul telefono; ricritiche fatte (29-32/40) e correzioni fatte ([[0016-correzioni-dalle-ricritiche]]); da provare sul telefono.
 
 Riferimenti: [[spec]] · [[GLOSSARY]] · [[PRODUCT]] · storico completo: `git log --oneline` (116 commit, branch `guardaroba-v1`, non ancora su `master`).
 
@@ -31,6 +31,7 @@ flowchart LR
   - [x] Guardaroba e scheda Capo: critica 22/40 → 5 modifiche fatte ([[0013-guardaroba-e-scheda-capo-ridisegnati]]): pulsante Filtri, scheda corta con barra ✕/Salva, conferma "Scartare le modifiche?", "Salva e aggiungi un altro", "Duplica", riga "Manca: …"; ricritica 29/40
   - [x] Preferiti: critica 23/40 → 5 modifiche fatte ([[0014-preferiti-ridisegnati]]): apertura in grande, "Non più valido" con rimedio, contrasto sul giallo, Spiegazione in frase, snackbar con Annulla; provati sul telefono; ricritica 29/40
   - [x] Impostazioni: critica 24/40 → 5 modifiche fatte ([[0015-impostazioni-ridisegnate]]): copia automatica prima di Importa con "Ripristina", backup detto come condizione con "Ultima copia", Esporta pieno e Importa contornato, barra in alto e snackbar, pagina "Come scegliamo gli abbinamenti"; provate sul telefono; ricritica 32/40
+  - [x] Correzioni dalle ricritiche: Proposta di prima, "Come funziona", Stagione e ⋮ nei Preferiti, filtri dei soli Capi presenti, barre col titolo ([[0016-correzioni-dalle-ricritiche]], ticket in `.scratch/design-ricritica/`); da provare sul telefono
 - [ ] **Retro**: problemi ricorrenti → regole nel CLAUDE.md
 - [ ] **Merge su `master`** e push: solo su tua richiesta
 
@@ -47,7 +48,7 @@ flowchart LR
 
 ## Decisioni (ADR)
 
-[[0001-offline-regole-senza-ai]] · [[0002-android-nativo]] · [[0003-foto-compresse-e-backup]] · [[0004-regole-di-armonia]] · [[0005-min-sdk-26]] · [[0006-filtro-stagione-azzera-gia-viste]] · [[0007-formato-export-zip]] · [[0008-parti-da-capo-ignora-filtro]] · [[0009-import-sostituisce-con-foto-rinominate]] · [[0010-proposta-scade-se-cambiano-i-suoi-capi]] · [[0011-preferito-giudicato-con-i-capi-di-adesso]] · [[0012-schermata-outfit-ridisegnata]] · [[0013-guardaroba-e-scheda-capo-ridisegnati]] · [[0014-preferiti-ridisegnati]] · [[0015-impostazioni-ridisegnate]]
+[[0001-offline-regole-senza-ai]] · [[0002-android-nativo]] · [[0003-foto-compresse-e-backup]] · [[0004-regole-di-armonia]] · [[0005-min-sdk-26]] · [[0006-filtro-stagione-azzera-gia-viste]] · [[0007-formato-export-zip]] · [[0008-parti-da-capo-ignora-filtro]] · [[0009-import-sostituisce-con-foto-rinominate]] · [[0010-proposta-scade-se-cambiano-i-suoi-capi]] · [[0011-preferito-giudicato-con-i-capi-di-adesso]] · [[0012-schermata-outfit-ridisegnata]] · [[0013-guardaroba-e-scheda-capo-ridisegnati]] · [[0014-preferiti-ridisegnati]] · [[0015-impostazioni-ridisegnate]] · [[0016-correzioni-dalle-ricritiche]]
 
 ## Punteggi di design (Impeccable)
 
