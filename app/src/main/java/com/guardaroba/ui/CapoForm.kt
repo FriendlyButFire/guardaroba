@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -240,11 +241,15 @@ fun CapoForm(
                     )
                 }
             }
-            bozza.categoria?.let { scelta ->
-                Sezione("Tipo") {
+            // Tipo c'è sempre, così scegliere la Categoria non sposta la pagina sotto il dito.
+            Sezione("Tipo") {
+                val scelta = bozza.categoria
+                if (scelta != null) {
                     scelta.tipi.forEach {
                         FilterChip(selected = it == bozza.tipo, onClick = { bozza = bozza.copy(tipo = it) }, label = { Text(it.maiuscola()) })
                     }
+                } else Box(Modifier.heightIn(min = 48.dp), contentAlignment = Alignment.CenterStart) { // alto come una riga di chip
+                    Text("Scegli prima la Categoria", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 

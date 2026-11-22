@@ -48,4 +48,20 @@ class FiltroTest {
         assertEquals(listOf(2L), ids(filtro))
         assertEquals(emptyList<Long>(), ids(filtro.copy(categoria = Categoria.SOPRA)))
     }
+
+    @Test
+    fun `le opzioni sono solo le Categorie e i Colori principali dei Capi, in ordine`() {
+        assertEquals(listOf(Categoria.SOPRA, Categoria.SOTTO, Categoria.CAPOSPALLA), Filtro().categorie(guardaroba))
+        // Nell'ordine della Palette; il Colore secondario non conta (come negli abbinamenti).
+        val conSecondarioRosso = jeansTuttoLAnno.copy(id = 4, coloreSecondario = "rosso")
+        assertEquals(listOf("bianco", "cammello", "denim"), Filtro().colori(guardaroba + conSecondarioRosso).map { it.id })
+    }
+
+    @Test
+    fun `un filtro attivo resta tra le opzioni anche senza Capi, per poterlo togliere`() {
+        val filtro = Filtro(categoria = Categoria.SCARPE, colore = "rosso")
+        assertTrue(Categoria.SCARPE in filtro.categorie(guardaroba))
+        assertTrue("rosso" in filtro.colori(guardaroba).map { it.id })
+        assertEquals(listOf(Categoria.SCARPE), filtro.categorie(emptyList()))
+    }
 }
