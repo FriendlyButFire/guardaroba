@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,11 +63,13 @@ fun descrizione(capo: Capo): String =
 
 /** La frase dice perché funziona; la regola resta come etichetta per chi vuole impararla. Senza [perché] resta il [ripiego]. */
 @Composable
-fun Spiegazione(perché: Perché?, ripiego: String) {
+fun Spiegazione(perché: Perché?, ripiego: String, onComeFunziona: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(perché?.frase ?: ripiego, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
         perché?.let {
             Text(it.regola.maiuscola(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        // La regola ha un nome tecnico: la pagina delle regole lo spiega (prima ci si arrivava solo dalle Impostazioni).
+        TextButton(onClick = onComeFunziona) { Text("Come funziona") }
     }
 }

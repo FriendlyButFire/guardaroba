@@ -254,6 +254,13 @@ private fun VistaPreferito(
     onRinomina: () -> Unit,
     onElimina: () -> Unit,
 ) {
+    // Sopra l'if: tornando dalle regole lo scorrimento resta dov'era.
+    val scorrimento = rememberScrollState()
+    var regole by rememberSaveable { mutableStateOf(false) }
+    if (regole) {
+        RegoleScreen(onIndietro = { regole = false })
+        return
+    }
     BackHandler(onBack = onIndietro)
     val giudizio = preferito.giudizio()
     val valido = giudizio is Giudizio.Valido
@@ -282,14 +289,14 @@ private fun VistaPreferito(
         snackbarHost = { SnackbarHost(avvisi) },
     ) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
+            Modifier.fillMaxSize().padding(padding).verticalScroll(scorrimento).padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val cambiato = preferito.responsabile()
             OutfitVerticale(preferito.capi, onApri = onApriCapo, cambiato = cambiato)
             when (giudizio) {
-                is Giudizio.Valido -> Spiegazione(preferito.perché(), giudizio.spiegazione)
+                is Giudizio.Valido -> Spiegazione(preferito.perché(), giudizio.spiegazione, onComeFunziona = { regole = true })
                 is Giudizio.NonValido -> NonPiùValido(giudizio.ragione, inGrande = true, cambiato)
             }
         }

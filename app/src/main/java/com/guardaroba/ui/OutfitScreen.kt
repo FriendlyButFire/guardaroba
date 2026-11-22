@@ -75,6 +75,13 @@ import com.guardaroba.motore.perché
 @Composable
 fun OutfitScreen(vm: OutfitViewModel) {
     val stato = vm.stato
+    // Sopra l'if, come nelle Impostazioni: tornando dalle regole Proposta e scorrimento restano dov'erano.
+    val scorrimento = rememberScrollState()
+    var regole by rememberSaveable { mutableStateOf(false) }
+    if (regole) {
+        RegoleScreen(onIndietro = { regole = false })
+        return
+    }
     val preferiti by vm.outfitPreferiti.collectAsStateWithLifecycle()
     vm.avvisoFuoriStagione?.let { AvvisoFuoriStagione(it, vm::chiudiAvviso) }
     // In alto i comandi che cambiano la Richiesta, in basso l'azione principale sempre nello stesso posto: scorre solo il contenuto.
@@ -107,7 +114,7 @@ fun OutfitScreen(vm: OutfitViewModel) {
             }
         }
         Column(
-            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(scorrimento).padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -131,7 +138,7 @@ fun OutfitScreen(vm: OutfitViewModel) {
                         is Esito.Proposta -> {
                             // mapNotNull: un Capo eliminato dopo la Proposta sparisce dalla miniatura
                             OutfitVerticale(esito.outfit.capi.mapNotNull { stato?.capi?.get(it.id) })
-                            Spiegazione(perché(esito.outfit), esito.spiegazione)
+                            Spiegazione(perché(esito.outfit), esito.spiegazione, onComeFunziona = { regole = true })
                             // Il nome si chiede solo dopo Salva; una Proposta nuova chiude la finestra.
                             var chiediNome by rememberSaveable(esito.outfit.idCapi) { mutableStateOf(false) }
                             val traIPreferiti = esito.outfit.idCapi in preferiti

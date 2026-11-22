@@ -4,8 +4,12 @@
 
 **Blocked by:** 01, 03, 05 (tocca `OutfitScreen.kt` e `PreferitiScreen.kt`)
 
-**Status:** pronto-per-agente
+**Status:** chiuso
 
-- [ ] Collegamento in Outfit sotto la regola della Spiegazione
-- [ ] Collegamento nel Preferito aperto
-- [ ] Indietro (freccia e sistema) torna alla schermata di prima senza perdere la Proposta né lo scorrimento
+- [x] Collegamento in Outfit sotto la regola della Spiegazione
+- [x] Collegamento nel Preferito aperto
+- [x] Indietro (freccia e sistema) torna alla schermata di prima senza perdere la Proposta né lo scorrimento
+
+## Comments
+
+- Il collegamento sta dentro `Spiegazione` (condivisa da Outfit e Preferito aperto). Verificato sull'emulatore: andata e ritorno con Proposta, cronologia e scorrimento intatti.
