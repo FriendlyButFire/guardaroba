@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,6 +66,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.guardaroba.archivio.Capo
 import com.guardaroba.archivio.PreferitoConCapi
 import com.guardaroba.motore.Giudizio
+import com.guardaroba.motore.Stagione
 import com.guardaroba.motore.rimedio
 
 /**
@@ -90,9 +93,12 @@ fun PreferitiScreen(
         return
     }
     val lista = preferiti
-    lista?.find { it.preferito.id == aperto }?.let { p ->
-        VistaPreferito(p, validoVisto, onVisto = { validoVisto = it }, onIndietro = { aperto = null }, onApriCapo = { capoAperto = it.id })
-        return
+    // Qui in cima: Rinomina si apre sia dall'elenco sia dal Preferito aperto.
+    lista?.find { it.preferito.id == daRinominare }?.let { p ->
+        FinestraNome("Rinomina", p.preferito.nome.orEmpty(), onChiudi = { daRinominare = null }) {
+            vm.rinomina(p.preferito.id, it)
+            scope.launch { avvisi.showSnackbar("Preferito rinominato") }
+        }
     }
     // Eliminare si annulla dallo snackbar: niente finestra di conferma (ADR-0014).
     // shortcut: lo snackbar vive con questa schermata: aprendo un Preferito ricompare al ritorno, cambiando sezione si perde
@@ -104,6 +110,20 @@ fun PreferitiScreen(
             val esito = avvisi.showSnackbar("Preferito eliminato", actionLabel = "Annulla", duration = SnackbarDuration.Long)
             if (esito == SnackbarResult.ActionPerformed) vm.ripristina(p)
         }
+    }
+    lista?.find { it.preferito.id == aperto }?.let { p ->
+        VistaPreferito(
+            p,
+            validoVisto,
+            avvisi,
+            onVisto = { validoVisto = it },
+            onIndietro = { aperto = null },
+            onApriCapo = { capoAperto = it.id },
+            onRinomina = { daRinominare = p.preferito.id },
+            // Eliminato da aperto si torna all'elenco, dove lo snackbar con Annulla resta in vista.
+            onElimina = { aperto = null; elimina(p) },
+        )
+        return
     }
     Scaffold(
         contentWindowInsets = WindowInsets(0), // insets already applied by the outer Scaffold
@@ -122,26 +142,47 @@ fun PreferitiScreen(
                 Text("Nessun Preferito.\nSalva da Outfit le Proposte che ti piacciono.", textAlign = TextAlign.Center)
                 FilledTonalButton(onClick = onVaiAOutfit) { Text("Vai a Outfit") }
             }
-            else -> LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(lista, key = { it.preferito.id }) { p ->
-                    SchedaPreferito(
-                        p,
-                        onApri = { aperto = p.preferito.id },
-                        onRinomina = { daRinominare = p.preferito.id },
-                        onElimina = { elimina(p) },
-                    )
+            else -> Column(Modifier.fillMaxSize().padding(padding)) {
+                // Gli stessi chip Stagione di Outfit; "tutto l'anno" entra già in ogni filtro, quindi non è una voce.
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    (listOf(null) + (Stagione.entries - Stagione.TUTTO_L_ANNO)).forEach {
+                        FilterChip(
+                            selected = it == vm.filtroStagione,
+                            onClick = { vm.filtroStagione = it },
+                            label = { Text((it?.nome ?: "qualsiasi stagione").maiuscola()) },
+                        )
+                    }
+                }
+                val filtrati = lista.perStagione(vm.filtroStagione)
+                if (filtrati.isEmpty()) {
+                    Column(
+                        Modifier.fillMaxSize().padding(32.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text("Nessun Preferito con tutti i Capi adatti a questa stagione.", textAlign = TextAlign.Center)
+                        FilledTonalButton(onClick = { vm.filtroStagione = null }) { Text("Mostra tutti i Preferiti") }
+                    }
+                } else {
+                    LazyColumn(
+                        Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(filtrati, key = { it.preferito.id }) { p ->
+                            SchedaPreferito(
+                                p,
+                                onApri = { aperto = p.preferito.id },
+                                onRinomina = { daRinominare = p.preferito.id },
+                                onElimina = { elimina(p) },
+                            )
+                        }
+                    }
                 }
             }
-        }
-    }
-    lista?.find { it.preferito.id == daRinominare }?.let { p ->
-        FinestraNome("Rinomina", p.preferito.nome.orEmpty(), onChiudi = { daRinominare = null }) {
-            vm.rinomina(p.preferito.id, it)
-            scope.launch { avvisi.showSnackbar("Preferito rinominato") }
         }
     }
 }
@@ -158,19 +199,7 @@ private fun SchedaPreferito(preferito: PreferitoConCapi, onApri: () -> Unit, onR
                     style = MaterialTheme.typography.titleMedium,
                     color = if (preferito.preferito.nome == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                 )
-                // Nel menu ⋮ come nella scheda Capo (ADR-0013); a voce ogni azione dice di quale Preferito si tratta.
-                AltreAzioni("Altre azioni per $nome") { chiudi ->
-                    DropdownMenuItem(
-                        text = { Text("Rinomina") },
-                        onClick = { chiudi(); onRinomina() },
-                        modifier = Modifier.semantics { contentDescription = "Rinomina $nome" },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Elimina", color = MaterialTheme.colorScheme.error) },
-                        onClick = { chiudi(); onElimina() },
-                        modifier = Modifier.semantics { contentDescription = "Elimina $nome" },
-                    )
-                }
+                AzioniPreferito(nome, onRinomina, onElimina)
             }
             val cambiato = preferito.responsabile()
             Row(Modifier.fillMaxWidth()) {
@@ -195,15 +224,35 @@ private fun SchedaPreferito(preferito: PreferitoConCapi, onApri: () -> Unit, onR
     }
 }
 
+/** Il menu ⋮ di un Preferito, come nella scheda Capo (ADR-0013); a voce ogni azione dice di quale Preferito si tratta. */
+@Composable
+private fun AzioniPreferito(nome: String, onRinomina: () -> Unit, onElimina: () -> Unit) {
+    AltreAzioni("Altre azioni per $nome") { chiudi ->
+        DropdownMenuItem(
+            text = { Text("Rinomina") },
+            onClick = { chiudi(); onRinomina() },
+            modifier = Modifier.semantics { contentDescription = "Rinomina $nome" },
+        )
+        DropdownMenuItem(
+            text = { Text("Elimina", color = MaterialTheme.colorScheme.error) },
+            onClick = { chiudi(); onElimina() },
+            modifier = Modifier.semantics { contentDescription = "Elimina $nome" },
+        )
+    }
+}
+
 /** Il Preferito in grande, composto come in Outfit e giudicato con i Capi di adesso (ADR-0011, ADR-0014); toccare un riquadro apre il Capo. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun VistaPreferito(
     preferito: PreferitoConCapi,
     validoVisto: Boolean?,
+    avvisi: SnackbarHostState,
     onVisto: (Boolean) -> Unit,
     onIndietro: () -> Unit,
     onApriCapo: (Capo) -> Unit,
+    onRinomina: () -> Unit,
+    onElimina: () -> Unit,
 ) {
     BackHandler(onBack = onIndietro)
     val giudizio = preferito.giudizio()
@@ -216,16 +265,24 @@ private fun VistaPreferito(
         if (validoVisto != null && validoVisto != valido) view.announceForAccessibility(if (valido) "Di nuovo valido" else "Non più valido")
         onVisto(valido)
     }
-    Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text(preferito.preferito.nome ?: "Senza nome", maxLines = 1, overflow = TextOverflow.Ellipsis) },
-            navigationIcon = {
-                IconButton(onClick = onIndietro) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro") }
-            },
-            windowInsets = WindowInsets(0),
-        )
+    val nome = preferito.preferito.nome ?: "Senza nome"
+    // Qui lo snackbar di "Preferito rinominato"; quello di Elimina compare nell'elenco, dove si torna.
+    Scaffold(
+        contentWindowInsets = WindowInsets(0), // insets already applied by the outer Scaffold
+        topBar = {
+            TopAppBar(
+                title = { Text(nome, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    IconButton(onClick = onIndietro) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro") }
+                },
+                actions = { AzioniPreferito(nome, onRinomina, onElimina) },
+                windowInsets = WindowInsets(0),
+            )
+        },
+        snackbarHost = { SnackbarHost(avvisi) },
+    ) { padding ->
         Column(
-            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
