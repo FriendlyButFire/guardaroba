@@ -1,0 +1,8 @@
+#!/bin/sh
+# Unit tests before every commit that touches code or build files (docs-only commits skip them).
+# Enabled per clone with: git config core.hooksPath .githooks
+git diff --cached --name-only | grep -qE '\.(kt|kts|gradle|toml|properties|xml|zip)$|guardaroba\.json$' || exit 0
+# The global JAVA_HOME is JDK 8; the build needs the JBR (JDK 21), see build-notes/android-env.md.
+export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"
+echo "pre-commit: ./gradlew :motore:test testDebugUnitTest"
+./gradlew -q :motore:test testDebugUnitTest || { echo "pre-commit: tests failed, commit blocked"; exit 1; }

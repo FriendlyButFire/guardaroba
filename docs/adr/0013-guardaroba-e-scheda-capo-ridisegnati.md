@@ -1,0 +1,15 @@
+# Guardaroba e scheda Capo ridisegnati: le scelte non scritte altrove
+
+La critica Impeccable del 2026-11-21 sulla schermata Guardaroba e sulla scheda Capo, approvata dall'utente, ha fissato il grosso: pulsante Filtri con pannello dal basso e solo i filtri attivi in vista, Colore secondario chiuso, barra in alto con ✕ e Salva, foto in cima, "Scartare le modifiche?", "Manca: …", indicatore al caricamento, etichette con la maiuscola come in Outfit ([[0012-schermata-outfit-ridisegnata]]). L'utente ha chiesto in più "Salva e aggiungi un altro" e "Duplica". Qui ci sono le scelte di dettaglio prese durante la costruzione.
+
+- **I filtri si applicano subito.** Ogni tocco nel pannello Filtri cambia già la griglia; il pulsante in fondo dice quanti Capi restano ("Mostra 3 capi") e chiude. Nella griglia un filtro attivo è un chip con ✕: toccarlo lo toglie. "Azzera" compare da due filtri in su.
+- **Il menu ⋮ della scheda.** Per un Capo nuovo ha solo "Salva e aggiungi un altro"; per una modifica ha "Duplica", "Parti da questo capo" ed "Elimina" (in rosso, con la conferma di sempre). Salva resta l'unica azione sempre in vista.
+- **"Salva e aggiungi un altro"** salva e riapre una scheda Nuovo capo vuota, con lo snackbar "Capo salvato" come conferma.
+- **"Duplica" parte dal Capo salvato, senza la foto.** Apre un Nuovo capo con tutti i campi del Capo tranne la Foto: un file in `foto/` appartiene a un solo Capo, e la cancellazione di un Capo cancella la sua. Duplicare e chiudere subito senza toccare niente non chiede conferma: non c'è niente da perdere.
+- **Uscire con modifiche chiede sempre.** "Scartare le modifiche?" (Scarta / Continua a modificare) compare per Indietro, ✕, "Duplica" e "Parti da questo capo", perché tutti e quattro partono dal Capo salvato e lasciano le modifiche. "Modificato" vuol dire che la scheda è diversa da come si è aperta (la `Bozza` non è più uguale a quella di partenza), foto compresa. Una foto scelta e scartata viene cancellata come prima.
+- **La riga "Manca: …"** sta sotto la barra in alto, così resta visibile scorrendo; nomina i campi obbligatori vuoti nell'ordine della scheda (Categoria, Tipo, Colore principale). La regola sta in un posto solo, `Bozza.mancano`. Mentre una foto si comprime la riga dice "Preparo la foto…", perché anche allora Salva è spento.
+- **La foto in cima** è un riquadro alto 160 dp quando manca ("Aggiungi foto", "Opzionale") e 4:3 quando c'è, mostrata a piena risoluzione (le miniature della griglia restano a metà). Toccarla apre il menu Scatta / Dalla galleria / Rimuovi foto.
+- **La tastiera restringe la scheda** invece di spostare la finestra (`adjustResize`): la barra con Salva resta in vista mentre si scrive la Taglia.
+- **Maiuscole solo a schermo.** Tipi, Motivi, Stagioni e nomi dei Colori sono minuscoli nel Motore, nel database e nell'export; `maiuscola()` li cambia solo nelle etichette, anche nei riquadri dei Capi (quindi anche in Outfit e Preferiti).
+
+Aperto: cambiare sezione dalla barra in basso con la scheda aperta chiude ancora la scheda senza chiedere (come prima della critica). Va chiesto anche lì se capita di perdere un Capo così.

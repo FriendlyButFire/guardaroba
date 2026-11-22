@@ -4,9 +4,17 @@
 
 **Blocked by:** 02
 
-**Status:** pronto-per-agente
+**Status:** chiuso
 
-- [ ] Campi aggiunti allo schema (migrazione Room, oppure schema ricreato se non esistono ancora dati reali: annotarlo)
-- [ ] Default: Motivo tinta unita, Stagione tutto l'anno
-- [ ] La scheda del Capo mostra tutti i campi
-- [ ] La griglia mostra anche il Colore secondario nel riquadro
+- [x] Campi aggiunti allo schema (migrazione Room, oppure schema ricreato se non esistono ancora dati reali: annotarlo)
+- [x] Default: Motivo tinta unita, Stagione tutto l'anno
+- [x] La scheda del Capo mostra tutti i campi
+- [x] La griglia mostra anche il Colore secondario nel riquadro
+
+## Comments
+
+- Schema Room v2 con `AutoMigration(1→2)` (non ricreato): i default `TINTA_UNITA` / `TUTTO_L_ANNO` sono `@ColumnInfo(defaultValue)`, i Capi v1 restano. `MigrazioneTest` crea a mano un file v1 e lo apre con Room (MigrationTestHelper non vede gli schemi sotto Robolectric).
+- `Motivo` e `Stagione` sono enum in `:motore` (li userà il Motore), salvati per nome come `Categoria`.
+- Non esiste ancora una scheda di un Capo esistente: qui la "scheda" è il form, che mostra tutti i campi. Il ticket 04 dovrà dare a `CapoForm` i valori iniziali del Capo.
+- Nel form, toccare di nuovo il Colore secondario scelto lo toglie. In griglia il Colore secondario è una fascia in basso nel riquadro.
+- UI verificata solo con `assembleDebug`, non a mano su emulatore.

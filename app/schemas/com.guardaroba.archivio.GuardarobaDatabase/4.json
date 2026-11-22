@@ -1,0 +1,179 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "d1fe86dba47dcedc642f075dc72dc9a0",
+    "entities": [
+      {
+        "tableName": "capo",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `categoria` TEXT NOT NULL, `tipo` TEXT NOT NULL, `colorePrincipale` TEXT NOT NULL, `coloreSecondario` TEXT, `motivo` TEXT NOT NULL DEFAULT 'TINTA_UNITA', `stagione` TEXT NOT NULL DEFAULT 'TUTTO_L_ANNO', `taglia` TEXT, `percorsoFoto` TEXT, `creatoIl` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoria",
+            "columnName": "categoria",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipo",
+            "columnName": "tipo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colorePrincipale",
+            "columnName": "colorePrincipale",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "coloreSecondario",
+            "columnName": "coloreSecondario",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "motivo",
+            "columnName": "motivo",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'TINTA_UNITA'"
+          },
+          {
+            "fieldPath": "stagione",
+            "columnName": "stagione",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'TUTTO_L_ANNO'"
+          },
+          {
+            "fieldPath": "taglia",
+            "columnName": "taglia",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "percorsoFoto",
+            "columnName": "percorsoFoto",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "creatoIl",
+            "columnName": "creatoIl",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "preferito",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nome` TEXT, `spiegazione` TEXT NOT NULL, `creatoIl` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nome",
+            "columnName": "nome",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "spiegazione",
+            "columnName": "spiegazione",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "creatoIl",
+            "columnName": "creatoIl",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "preferito_capo",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`preferitoId` INTEGER NOT NULL, `capoId` INTEGER NOT NULL, PRIMARY KEY(`preferitoId`, `capoId`), FOREIGN KEY(`preferitoId`) REFERENCES `preferito`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`capoId`) REFERENCES `capo`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "preferitoId",
+            "columnName": "preferitoId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "capoId",
+            "columnName": "capoId",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "preferitoId",
+            "capoId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_preferito_capo_capoId",
+            "unique": false,
+            "columnNames": [
+              "capoId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_preferito_capo_capoId` ON `${TABLE_NAME}` (`capoId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "preferito",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "preferitoId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "capo",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "capoId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd1fe86dba47dcedc642f075dc72dc9a0')"
+    ]
+  }
+}

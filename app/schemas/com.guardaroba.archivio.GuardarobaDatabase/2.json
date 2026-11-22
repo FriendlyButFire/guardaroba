@@ -1,0 +1,79 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "e99c630a07e78680a99b8347a01c2146",
+    "entities": [
+      {
+        "tableName": "capo",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `categoria` TEXT NOT NULL, `tipo` TEXT NOT NULL, `colorePrincipale` TEXT NOT NULL, `coloreSecondario` TEXT, `motivo` TEXT NOT NULL DEFAULT 'TINTA_UNITA', `stagione` TEXT NOT NULL DEFAULT 'TUTTO_L_ANNO', `taglia` TEXT, `creatoIl` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoria",
+            "columnName": "categoria",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipo",
+            "columnName": "tipo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colorePrincipale",
+            "columnName": "colorePrincipale",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "coloreSecondario",
+            "columnName": "coloreSecondario",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "motivo",
+            "columnName": "motivo",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'TINTA_UNITA'"
+          },
+          {
+            "fieldPath": "stagione",
+            "columnName": "stagione",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'TUTTO_L_ANNO'"
+          },
+          {
+            "fieldPath": "taglia",
+            "columnName": "taglia",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "creatoIl",
+            "columnName": "creatoIl",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e99c630a07e78680a99b8347a01c2146')"
+    ]
+  }
+}

@@ -5,7 +5,7 @@ App personale che propone abbinamenti di colore tra i capi che l'utente possiede
 ## Capi
 
 **Capo**:
-Un singolo indumento posseduto dall'utente, descritto da categoria, tipo, colori, motivo, stagione e taglia.
+Un singolo indumento posseduto dall'utente, descritto da categoria, tipo, colori, motivo, stagione, taglia e una Foto opzionale.
 _Avoid_: Item, articolo, vestito
 
 **Guardaroba**:
@@ -44,6 +44,13 @@ _Avoid_: Pattern, stampa
 **Stagione**:
 Il periodo in cui si indossa un Capo: estivo, invernale, mezza stagione o tutto l'anno.
 
+**Taglia**:
+La misura del Capo, testo libero opzionale (es. "M", "42", "W32 L34"); solo informativa.
+
+**Foto**:
+L'immagine opzionale di un Capo, scattata o scelta dalla galleria; se ne conserva solo la versione compressa (ADR-0003).
+_Avoid_: Immagine
+
 ## Abbinamenti
 
 **Outfit**:
@@ -54,13 +61,16 @@ _Avoid_: Look, completo, combinazione
 Una regola di teoria dei colori che rende validi insieme i Colori principali non Neutri di un Outfit: monocromatico, analoghi o complementari.
 _Avoid_: Schema, combinazione
 
+**Colori consigliati**:
+I Colori della Palette che starebbero bene con il Colore principale di un Capo, ognuno con la regola che li abbina (es. "complementari").
+
 **Proposta**:
 Un Outfit suggerito dall'app, accompagnato dalla sua Spiegazione.
 _Avoid_: Suggerimento, risultato
 
 **Spiegazione**:
-La motivazione cromatica di una Proposta, espressa con le regole di abbinamento applicate (es. "complementari").
+La motivazione cromatica di una Proposta o di un Preferito, espressa con le regole di abbinamento applicate (es. "complementari"). In Outfit diventa una frase in italiano semplice sul perché funziona, con la regola come etichetta (ADR-0012). Per un Preferito si rifà con i Capi di adesso (ADR-0011).
 
 **Preferito**:
-Un Outfit salvato dall'utente.
+Un Outfit salvato dall'utente. Se un suo Capo cambia e l'Outfit non è più valido, resta tra i Preferiti segnalato come "Non più valido" con la ragione (ADR-0011).
 _Avoid_: Salvato, bookmark

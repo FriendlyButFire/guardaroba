@@ -4,10 +4,15 @@
 
 **Blocked by:** 19
 
-**Status:** pronto-per-agente
+**Status:** chiuso
 
-- [ ] Conferma esplicita prima della sostituzione
-- [ ] Validazione completa dell'archivio prima di toccare i dati
-- [ ] Sostituzione in un'unica transazione, con ripristino delle foto
-- [ ] Test (Robolectric): il giro export → import ripristina dati e foto identici
-- [ ] Test: l'import di un file non valido lascia i dati intatti
+- [x] Conferma esplicita prima della sostituzione
+- [x] Validazione completa dell'archivio prima di toccare i dati
+- [x] Sostituzione in un'unica transazione, con ripristino delle foto
+- [x] Test (Robolectric): il giro export → import ripristina dati e foto identici
+- [x] Test: l'import di un file non valido lascia i dati intatti
+
+## Comments
+
+- Le foto importate prendono un nome nuovo (UUID) e le vecchie si cancellano solo dopo il commit: nessuna uscita a metà lascia il database con foto mancanti (ADR-0009). Dopo l'import `percorsoFoto` cambia, il contenuto no.
+- Da verificare a mano su emulatore/telefono: selettore, dialogo di conferma, messaggi d'errore.

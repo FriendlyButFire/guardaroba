@@ -4,8 +4,8 @@
 
 **Blocked by:** 03, 07
 
-**Status:** pronto-per-agente
+**Status:** chiuso
 
-- [ ] Al massimo 1 Capo non a tinta unita per Outfit
-- [ ] Colore secondario ignorato dalle regole
-- [ ] Test JVM: due Capi a righe non compaiono mai nella stessa Proposta; un Colore secondario non neutro non rende invalido un Outfit
+- [x] Al massimo 1 Capo non a tinta unita per Outfit
+- [x] Colore secondario ignorato dalle regole
+- [x] Test JVM: due Capi a righe non compaiono mai nella stessa Proposta; un Colore secondario non neutro non rende invalido un Outfit
