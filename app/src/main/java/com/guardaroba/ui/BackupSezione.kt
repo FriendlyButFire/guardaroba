@@ -27,7 +27,8 @@ fun BackupSezione(stato: StatoBackup?) {
         val s = stato ?: return@Column
         Text("${mb(s.byte)} MB usati su ${mb(StatoBackup.LIMITE)} MB · ${s.foto} foto")
         LinearProgressIndicator(
-            progress = { (s.byte.toFloat() / StatoBackup.LIMITE).coerceAtMost(1f) },
+            // Almeno il 2%: a 0,3 MB su 25 la barra vuota sembrava rotta.
+            progress = { (s.byte.toFloat() / StatoBackup.LIMITE).coerceIn(0.02f, 1f) },
             Modifier.fillMaxWidth(),
             color = if (s.livello == LivelloBackup.OK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
         )
