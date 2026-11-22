@@ -1,8 +1,8 @@
 # Roadmap
 
-Aggiornata il **2026-11-22**. Fase attuale: **merge su master**, su tua richiesta. Il design con Impeccable è finito: quattro schermate ridisegnate, ricritiche (29-32/40), correzioni ([[0016-correzioni-dalle-ricritiche]]) provate sul telefono.
+Aggiornata il **2026-11-22**. **v1 finita** e unita su `master`. Restano il push (su tua richiesta) e, se vuoi, le funzioni pianificate dopo la v1 (in fondo).
 
-Riferimenti: [[spec]] · [[GLOSSARY]] · [[PRODUCT]] · storico completo: `git log --oneline` (116 commit, branch `guardaroba-v1`, non ancora su `master`).
+Riferimenti: [[spec]] · [[GLOSSARY]] · [[PRODUCT]] · storico completo: `git log --oneline` (su `master`, merge del 2026-11-22).
 
 ```mermaid
 flowchart LR
@@ -15,7 +15,7 @@ flowchart LR
   style F fill:#9c9
   style G fill:#9c9
   style H fill:#9c9
-  style I fill:#fc6
+  style I fill:#9c9
 ```
 
 ## Fasi
@@ -35,7 +35,7 @@ flowchart LR
   - [x] Impostazioni: critica 24/40 → 5 modifiche fatte ([[0015-impostazioni-ridisegnate]]): copia automatica prima di Importa con "Ripristina", backup detto come condizione con "Ultima copia", Esporta pieno e Importa contornato, barra in alto e snackbar, pagina "Come scegliamo gli abbinamenti"; provate sul telefono; ricritica 32/40
   - [x] Correzioni dalle ricritiche: Proposta di prima, "Come funziona", Stagione e ⋮ nei Preferiti, filtri dei soli Capi presenti, barre col titolo ([[0016-correzioni-dalle-ricritiche]], ticket in `.scratch/design-ricritica/`); provate sul telefono il 2026-11-22 (con mobile-mcp)
 - [x] **Retro** (2026-11-22): hook pre-commit con i test, `CODING_STANDARDS.md` (ciclo di vita dello stato), `docs/agents/prove-su-dispositivo.md` con dati di prova in `scripts/dati-di-prova.zip`, puntatori in CLAUDE.md
-- [ ] **Merge su `master`** e push: solo su tua richiesta
+- [x] **Merge su `master`** (2026-11-22). Push: solo su tua richiesta
 
 ## Build v1: ticket chiusi
 
